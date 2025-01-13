@@ -12,7 +12,7 @@ void IRAM_ATTR countPulses() {
 void measureWindSpeed() {
   interruptCounter = 0;                                                       // Reiniciar el contador
   attachInterrupt(digitalPinToInterrupt(WIND_SPD_PIN), countPulses, RISING);  // Configurar interrupción
-  delay(RECORD_TIME * 1000);                                                  // Medir durante RECORD_TIME segundos
+  //delay(RECORD_TIME * 1000);                                                  // Medir durante RECORD_TIME segundos
   detachInterrupt(digitalPinToInterrupt(WIND_SPD_PIN));                       // Desactivar interrupción
 
   // Calcular velocidad actual en km/h

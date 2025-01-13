@@ -1,20 +1,25 @@
-//Hardware build target: ESP32
-#define VERSION "0.0.1"
-
 #include "defines.h"
+#include "config.h"
+
 #include <WiFiManager.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <NTPClient.h>
-#include <EEPROM.h>
-#include <WebServer.h>
-#include "ThingSpeak.h"
 #include <DNSServer.h>
+#include <ESPmDNS.h>  // Librería para mDNS
+#include <WebServer.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#ifdef webSocket
+#include <WebSocketsServer.h>
+#endif
+
+#include <EEPROM.h>
+#include "ThingSpeak.h"
 #include <OneWire.h>
 #include <Wire.h>
 #include <stdlib.h>
 #include <SPI.h>
-#include <ESPmDNS.h>  // Librería para mDNS
 #include <esp_task_wdt.h>
 #include <esp_system.h>
 #include <DallasTemperature.h>
@@ -39,17 +44,22 @@ Adafruit_CCS811 ccs;  // Crear una instancia del sensor CCS811
 //===================================================
 // Declaración de variables servidores
 //===================================================
+// Credenciales de ThingSpeak
 const char* server3 = "api.thingspeak.com";
-char ts_api_key[34] = "";  // Thingspeak API Key
+char ts_api_key[MAX_API_KEY_LENGTH + 1] = "";  // Thingspeak API Key
+unsigned long channelID = 2801433;
+// Credenciales de weathercloud
 const char* server2 = "api.weathercloud.net";
-char ID2[34] = "";   // Weathercloud.net ID
-char Key2[34] = "";  // Weathercloud.net Key
+char ID2[MAX_API_KEY_LENGTH + 1] = "";   // Weathercloud.net ID
+char Key2[MAX_API_KEY_LENGTH + 1] = "";  // Weathercloud.net Key
+// Credenciales de windy
 char server4[] = "stations.windy.com";
-char WINDYPAGE[256] = "";  // Windy API endpoint
+char WINDYPAGE[MAX_API_KEY_LENGTH_WINDYPAGE + 1] = "";  // Windy API endpoint
+// Credenciales de pwsweather
 char server5[] = "pwsupdate.pwsweather.com";
 char WEBPAGE5[] = "GET /api/v1/submitwx?";
-char ID5[34] = "";   // Pwsweather ID
-char Key5[34] = "";  // Pwsweather Key
+char ID5[MAX_API_KEY_LENGTH + 1] = "";   // Pwsweather ID
+char Key5[MAX_API_KEY_LENGTH + 1] = "";  // Pwsweather Key
 
 //===================================================
 // Variables para el control de servicios
@@ -64,10 +74,15 @@ bool pwsweather_enabled = false;
 //===================================================
 WebServer server(80);
 
+#ifdef webSocket
+WebSocketsServer webSocket = WebSocketsServer(81);  // WebSocket en el puerto 81
+#endif
+
 //===================================================
 // WiFi
 //===================================================
 WiFiManager wifiManager;
+WiFiClient client;
 
 //===================================================
 // Time
@@ -111,13 +126,25 @@ void setup() {
   Serial.println(WiFi.localIP());*/
 
   // Configurar rutas del servidor web
+#ifdef webSocket
+  server.on("/", handleWebPage);
+  server.on("/sensor-data", handleSensorData);
+  server.on("/config", handleRoot);
+#else
   server.on("/", handleRoot);
+#endif
   server.on("/save", HTTP_POST, handleSave);
 
 
   // Iniciar el servidor web
   server.begin();
   MonPrintf("Servidor web iniciado\n");
+
+  // Iniciar el servidor WebSocket
+#ifdef webSocket
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);  // Maneja los eventos WebSocket
+#endif
 
   // Iniciar el cliente NTP
   timeClient.begin();
@@ -128,6 +155,21 @@ void setup() {
   setubahtbmp();
   setupBH1750();
   setupDS18B20();
+
+  ThingSpeak.begin(client);
+
+#ifdef demo
+  readSensors();
+  sensordemoprint();
+  thingspeak();
+#ifdef SerialMonitor
+    Serial.println("Datos demo actualizados");
+#endif
+#endif
+#ifdef SerialMonitor
+  Serial.println("Estacion iniciada");
+#endif
+
 }
 
 //===================================================
@@ -136,7 +178,11 @@ void setup() {
 void loop() {
   // Procesar solicitudes del servidor web
   server.handleClient();
-  // Procesar WebSocket
+// Manejar las conexiones WebSocket
+#ifdef webSocket
+  webSocket.loop();
+#endif
+
   // Comprobar si han pasado 5 minutos (300000 ms)
   unsigned long currentMillis = millis();
 
@@ -144,6 +190,13 @@ void loop() {
     // Guardar el tiempo actual
     previousMillis = currentMillis;
     Time();
+#ifdef demo
+    readSensors();
+#ifdef SerialMonitor
+    Serial.println("Datos demo actualizados");
+    sensordemoprint();
+#endif
+#else
     measureWindSpeed();  // Medir velocidad del viento
     readWindDirection();
     rainloop();
@@ -151,7 +204,26 @@ void loop() {
     loopBH1750();
     loopS12SD();
     loopDS18B20();
+#endif
+#ifdef SerialMonitor
+    Serial.println("Datos actualizados");
+#endif
+
+    //Leer sensores
+    //SensorManager::SensorData data = sensorManager.readSensors();
 
     enviardatos();
+
+#ifdef SerialMonitor
+    Serial.println("Datos publicado");
+#endif
+
+    // Convertir los datos a JSON y enviarlos a los clientes WebSocket conectados
+#ifdef webSocket
+    String jsonData = sensorDataToJson();
+    webSocket.broadcastTXT(jsonData);  // Enviar el JSON a todos los clientes conectados
+#endif
   }
+
+  delay(5000);
 }

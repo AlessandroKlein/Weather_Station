@@ -15,11 +15,13 @@
 //Enable Sensor
 //===========================================
 #define SerialMonitor
+#define demo
 //#define BH1750Enable
 //#define AHTX0BMP280
 //#define BH1750
 //#define CCS811
 //#define heltec
+//#define webSocket
 
 //===========================================
 //Anemometer Calibration
@@ -41,9 +43,23 @@ IPAddress ip(172, 20, 15, 248);
 // Variables para la hora y temporizador
 //===========================================
 // Variables para la hora y temporizador
-const long interval = 300000;  // Intervalo de 5 minutos en milisegundos (300000 ms)
+//const long interval = 300000;  // Intervalo de 5 minutos en milisegundos (300000 ms)
+//const long interval = 180000;  // Intervalo de 3 minutos en milisegundos (180000 ms)
+const long interval = 90000; 
 
 //===========================================
 // WH-SP-WS01
 //===========================================
 #define WIND_FACTOR 2.4     // Factor para convertir pulsos a velocidad (km/h)
+
+//===========================================
+// Tamaño datos eeprom
+//===========================================
+#define MAX_API_KEY_LENGTH 33             // Definir el máximo de caracteres permitidos
+#define MAX_API_KEY_LENGTH_WINDYPAGE 133  // Definir el máximo de caracteres permitidos
+
+//===========================================
+// Buffer Json
+//===========================================
+// Tamaño del buffer JSON. Ajusta según la cantidad de datos.
+#define JSON_BUFFER_SIZE 1024 // Aumentar si es necesario

@@ -40,4 +40,17 @@ void readConfig() {
   EEPROM.get(312, windy_enabled);
   EEPROM.get(313, pwsweather_enabled);
   EEPROM.end();
+#ifdef SerialMonitor
+  Serial.println("EEPROM: ");
+  Serial.println(String(ts_api_key));
+  Serial.println(ID2);
+  Serial.println(Key2);
+  Serial.println(WINDYPAGE);
+  Serial.println(ID5);
+  Serial.println(Key5);
+  Serial.println(weathercloud_enabled);
+  Serial.println(thingspeak_enabled);
+  Serial.println(windy_enabled);
+  Serial.println(pwsweather_enabled);
+#endif
 }

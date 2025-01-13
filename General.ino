@@ -66,6 +66,10 @@ sensorData sensor;  // Instanciamos la estructura
 sensorStatus sensorStatusid;
 rainfallData rainData;
 
+// Crear configuración y rangos válidos
+SensorConfig sensorConfig;
+ValidRanges validRanges;
+
 //===========================================
 // iniciodatos: Inicio los datos
 //===========================================
@@ -87,7 +91,7 @@ void iniciodatos() {
 //===================================================
 void printTitle(void) {
   char buffer[32];
-  Serial.printf("\n\nWeather station v4\n");
+  Serial.printf("\n\n", String(DEVICE_NAME), "\n");
   Serial.printf("Version %s\n\n", VERSION);
 }
 
@@ -139,19 +143,22 @@ void enviardatos() {
   if (thingspeak_enabled) {
     // Código para enviar datos a ThingSpeak
     //ThingSpeak.writeField(channelNumber, field, ts_api_key);
+    thingspeak();
     MonPrintf("Enviando datos a ThingSpeak\n");
   }
 
-  if (weathercloud_enabled) {
+  if (weathercloud_enabled) { //Revisar
     // Código para enviar datos a Weathercloud
     //String url = String("http://") + server2 + "/v1/update?ID=" + String(ID2) + "&KEY=" + String(Key2);
-    MonPrintf("Enviando datos a Weathercloud\n");
+    /*weathercloud();
+    MonPrintf("Enviando datos a Weathercloud\n");*/
     // Realiza la solicitud HTTP para enviar los datos
   }
 
   if (windy_enabled) {
     // Código para enviar datos a Windy
-    String url = String("http://") + String(WINDYPAGE);
+    //String url = String("http://") + String(WINDYPAGE);
+    windy();
     MonPrintf("Enviando datos a Windy\n");
     // Realiza la solicitud HTTP para enviar los datos
   }
@@ -159,6 +166,7 @@ void enviardatos() {
   if (pwsweather_enabled) {
     // Código para enviar datos a Pwsweather
     //String url = String("http://") + String(server5) + String(WEBPAGE5) + "?ID=" + String(ID5) + "&KEY=" + String(Key5);
+    pws();
     MonPrintf("Enviando datos a Pwsweather\n");
     // Realiza la solicitud HTTP para enviar los datos
   }

@@ -71,8 +71,6 @@ void handleRoot() {
 }
 
 // Función para limitar la longitud de las cadenas antes de guardarlas
-#define MAX_API_KEY_LENGTH 33  // Definir el máximo de caracteres permitidos
-#define MAX_API_KEY_LENGTH_WINDYPAGE 133  // Definir el máximo de caracteres permitidos
 
 void handleSave() {
   if (server.hasArg("ts_api_key")) {
@@ -154,3 +152,135 @@ void handleSave() {
 
   server.send(200, "text/html", html);
 }
+
+#ifdef webSocket
+//===========================================
+//WebSocket
+//===========================================
+// Función para convertir los datos de sensorData a JSON
+String sensorDataToJson() {
+  DynamicJsonDocument doc(1024);
+  doc["windDirectionADC"] = sensor.windDirectionADC;
+  doc["windDirectiongradiant"] = sensor.windDirectiongradiant;
+  doc["rainTicks24h"] = sensor.rainTicks24h;
+  doc["rainTicks60m"] = sensor.rainTicks60m;
+  doc["temperatureC"] = sensor.temperatureC;
+  doc["temperatureAHT"] = sensor.temperatureAHT;
+  doc["temperatureBMP"] = sensor.temperatureBMP;
+  doc["windSpeed"] = sensor.windSpeed;
+  doc["windSpeedMax"] = sensor.windSpeedMax;
+  doc["barometricPressure"] = sensor.barometricPressure;
+  doc["humidity"] = sensor.humidity;
+  doc["UVIndex"] = sensor.UVIndex;
+  doc["lux"] = sensor.lux;
+  doc["c02"] = sensor.c02;
+  doc["tvoc"] = sensor.tvoc;
+
+  String output;
+  serializeJson(doc, output);  // Serializa el objeto JSON en un String
+  return output;
+}
+
+//===========================================
+//WebSocket Web
+//===========================================
+void handleWebPage() {
+  String html = "<!DOCTYPE html><html><head>";
+  html += "<meta charset='UTF-8'>";
+  html += "<title>Estación Meteorológica</title>";
+
+  // Estilo CSS para la página
+  html += "<style>";
+  html += "body { font-family: Arial, sans-serif; margin: 20px; background-color: #0E0E0E; color: #CCCCCC; }";
+  html += "h1 { text-align: center; color: #00ABE4; }";
+  html += "p { font-size: 16px; line-height: 1.5; margin-bottom: 15px; }";
+  html += "span { font-weight: bold; color: #00ABE4; }";
+  html += "div#sensorData { max-width: 800px; margin: auto; background: #000; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }";
+  html += "h3 { color: #00ABE4; margin-top: 20px; }";
+  html += "hr { border: 1px solid #00ABE4; margin-top: 30px; margin-bottom: 30px; }";
+  html += "</style>";
+
+  html += "</head><body>";
+
+  // Título de la página
+  html += "<h1>Estación Meteorológica</h1>";
+
+  // Contenedor de los datos de los sensores
+  html += "<div id='sensorData'>";
+  html += "<h3>Datos en tiempo real</h3>";
+
+  // Mostrar los valores iniciales de los sensores
+  html += "<p><span>Dirección del viento (ADC):</span> <span id='windDirectionADC'>" + String(sensor.windDirectionADC) + "</span></p>";
+  html += "<p><span>Temperatura (°C):</span> <span id='temperatureC'>" + String(sensor.temperatureC) + "</span></p>";
+  html += "<p><span>Humedad (%):</span> <span id='humidity'>" + String(sensor.humidity) + "</span></p>";
+  html += "<p><span>Velocidad del viento (m/s):</span> <span id='windSpeed'>" + String(sensor.windSpeed) + "</span></p>";
+  html += "<p><span>Presión barométrica (hPa):</span> <span id='barometricPressure'>" + String(sensor.barometricPressure) + "</span></p>";
+  html += "<p><span>Índice UV:</span> <span id='UVIndex'>" + String(sensor.UVIndex) + "</span></p>";
+  html += "<p><span>Luz (lux):</span> <span id='lux'>" + String(sensor.lux) + "</span></p>";
+  html += "<p><span>CO2 (ppm):</span> <span id='c02'>" + String(sensor.c02) + "</span></p>";
+  html += "<p><span>TVOC (ppb):</span> <span id='tvoc'>" + String(sensor.tvoc) + "</span></p>";
+  html += "</div>";
+
+  // Script JavaScript para WebSocket
+  html += "<script>";
+  html += "var ws = new WebSocket('ws://' + window.location.hostname + ':81');";  // Conexión WebSocket
+  html += "ws.onopen = function() {";
+  html += "  console.log('Conexión WebSocket establecida.');";
+  html += "};";
+
+  html += "ws.onmessage = function(event) {";
+  html += "  var sensorData = JSON.parse(event.data);";  // Recibe los datos en formato JSON
+  html += "  document.getElementById('windDirectionADC').textContent = sensorData.windDirectionADC;";
+  html += "  document.getElementById('temperatureC').textContent = sensorData.temperatureC;";
+  html += "  document.getElementById('humidity').textContent = sensorData.humidity;";
+  html += "  document.getElementById('windSpeed').textContent = sensorData.windSpeed;";
+  html += "  document.getElementById('barometricPressure').textContent = sensorData.barometricPressure;";
+  html += "  document.getElementById('UVIndex').textContent = sensorData.UVIndex;";
+  html += "  document.getElementById('lux').textContent = sensorData.lux;";
+  html += "  document.getElementById('c02').textContent = sensorData.c02;";
+  html += "  document.getElementById('tvoc').textContent = sensorData.tvoc;";
+  html += "};";
+  html += "</script>";
+
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+//===========================================
+//WebSocket Web
+//===========================================
+// Función que maneja los eventos de WebSocket
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
+  switch (type) {
+    case WStype_CONNECTED:
+      Serial.println("Cliente WebSocket conectado");
+      break;
+    case WStype_DISCONNECTED:
+      Serial.println("Cliente WebSocket desconectado");
+      break;
+    case WStype_TEXT:
+      Serial.println("Mensaje recibido");
+      break;
+  }
+}
+
+//===========================================
+//olicitud AJAX
+//===========================================
+void handleSensorData() {
+  String json = "{";
+  json += "\"windDirectionADC\":" + String(sensor.windDirectionADC) + ",";
+  json += "\"temperatureC\":" + String(sensor.temperatureC) + ",";
+  json += "\"humidity\":" + String(sensor.humidity) + ",";
+  json += "\"windSpeed\":" + String(sensor.windSpeed) + ",";
+  json += "\"barometricPressure\":" + String(sensor.barometricPressure) + ",";
+  json += "\"UVIndex\":" + String(sensor.UVIndex) + ",";
+  json += "\"lux\":" + String(sensor.lux) + ",";
+  json += "\"c02\":" + String(sensor.c02) + ",";
+  json += "\"tvoc\":" + String(sensor.tvoc);
+  json += "}";
+  server.send(200, "application/json", json);
+}
+
+#endif
