@@ -6,7 +6,7 @@ void definepin() {
   pinMode(WIND_SPD_PIN, INPUT_PULLUP);
   pinMode(RAIN_PIN, INPUT);
   attachInterrupt(digitalPinToInterrupt(RAIN_PIN), contadorLitros, FALLING);  // Configura la interrupción
-  pinMode(WIND_DIR_PIN, INPUT);  //Ver
+  pinMode(WIND_DIR_PIN, INPUT);                                               //Ver
   pinMode(S12SD, INPUT);
   pinMode(MQ_7, INPUT);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -50,13 +50,13 @@ struct sensorStatus {
 // Estructura de datos de precipitaciones
 //===========================================
 struct rainfallData {
-  unsigned int intervalRainfall;  // Lluvia en el intervalo (hora actual)
-  unsigned int hourlyRainfall[24];  // Lluvia por cada hora (24 horas)
+  unsigned int intervalRainfall;         // Lluvia en el intervalo (hora actual)
+  unsigned int hourlyRainfall[24];       // Lluvia por cada hora (24 horas)
   unsigned int current60MinRainfall[5];  // Lluvia de los últimos 60 minutos
-  unsigned int hourlyCarryover;  // Lluvia acumulada de la hora pasada
-  unsigned int priorHour;  // Lluvia de la hora anterior
-  unsigned int minuteCarryover;  // Lluvia acumulada en el minuto actual
-  unsigned int priorMinute;  // Lluvia del minuto anterior
+  unsigned int hourlyCarryover;          // Lluvia acumulada de la hora pasada
+  unsigned int priorHour;                // Lluvia de la hora anterior
+  unsigned int minuteCarryover;          // Lluvia acumulada en el minuto actual
+  unsigned int priorMinute;              // Lluvia del minuto anterior
 };
 
 //===========================================
@@ -139,36 +139,38 @@ void BlinkLED(int count) {
 // Enviar datos y habilitar
 //===========================================
 void enviardatos() {
-  // Enviar datos a los servicios habilitados
-  if (thingspeak_enabled) {
-    // Código para enviar datos a ThingSpeak
-    //ThingSpeak.writeField(channelNumber, field, ts_api_key);
-    thingspeak();
-    MonPrintf("Enviando datos a ThingSpeak\n");
-  }
+  if (WiFi.status() == WL_CONNECTED) {
+    // Enviar datos a los servicios habilitados
+    if (thingspeak_enabled) {
+      // Código para enviar datos a ThingSpeak
+      //ThingSpeak.writeField(channelNumber, field, ts_api_key);
+      thingspeak();
+      MonPrintf("Enviando datos a ThingSpeak\n");
+    }
 
-  if (weathercloud_enabled) { //Revisar
-    // Código para enviar datos a Weathercloud
-    //String url = String("http://") + server2 + "/v1/update?ID=" + String(ID2) + "&KEY=" + String(Key2);
-    /*weathercloud();
-    MonPrintf("Enviando datos a Weathercloud\n");*/
-    // Realiza la solicitud HTTP para enviar los datos
-  }
+    if (weathercloud_enabled) {  //Revisar
+      // Código para enviar datos a Weathercloud
+      //String url = String("http://") + server2 + "/v1/update?ID=" + String(ID2) + "&KEY=" + String(Key2);
+      weathercloud();
+      MonPrintf("Enviando datos a Weathercloud\n");
+      // Realiza la solicitud HTTP para enviar los datos
+    }
 
-  if (windy_enabled) {
-    // Código para enviar datos a Windy
-    //String url = String("http://") + String(WINDYPAGE);
-    windy();
-    MonPrintf("Enviando datos a Windy\n");
-    // Realiza la solicitud HTTP para enviar los datos
-  }
+    if (windy_enabled) {
+      // Código para enviar datos a Windy
+      //String url = String("http://") + String(WINDYPAGE);
+      windy();
+      MonPrintf("Enviando datos a Windy\n");
+      // Realiza la solicitud HTTP para enviar los datos
+    }
 
-  if (pwsweather_enabled) {
-    // Código para enviar datos a Pwsweather
-    //String url = String("http://") + String(server5) + String(WEBPAGE5) + "?ID=" + String(ID5) + "&KEY=" + String(Key5);
-    pws();
-    MonPrintf("Enviando datos a Pwsweather\n");
-    // Realiza la solicitud HTTP para enviar los datos
+    if (pwsweather_enabled) {
+      // Código para enviar datos a Pwsweather
+      //String url = String("http://") + String(server5) + String(WEBPAGE5) + "?ID=" + String(ID5) + "&KEY=" + String(Key5);
+      pws();
+      MonPrintf("Enviando datos a Pwsweather\n");
+      // Realiza la solicitud HTTP para enviar los datos
+    }
   }
 }
 

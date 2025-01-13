@@ -1,43 +1,55 @@
 void pws(void) {
-  Serial.print("Conectado a ");
-  Serial.println(server5);
-  WiFiClient client;
-  if (client.connect(server5, 80)) {
-    Serial.print("Conectado a ");
-    Serial.println(client.remoteIP());
-    delay(100);
+  HTTPClient http;
+  
+  String dateTimeUTC = getCurrentDateTimeUTC();
+  String serverPath = "http://pwsupdate.pwsweather.com/api/v1/submitwx?";
+  serverPath += "ID=";
+  serverPath += ID5;
+  serverPath += "&PASSWORD=";
+  serverPath += Key5;
+  serverPath += "&dateutc=";
+  serverPath += dateTimeUTC;  // Fecha y hora UTC
+  serverPath += "&tempf=";
+  serverPath += String(sensor.temperatureC * 1.8 + 32);  // Convertir a Fahrenheit
+  serverPath += "&humidity=";
+  serverPath += String(sensor.humidity);
+  serverPath += "&baromin=";
+  serverPath += String(sensor.barometricPressure * 0.02953);  // Convertir a pulgadas de Hg
+  serverPath += "&windspeedmph=";
+  serverPath += String(sensor.windSpeed * 1.60934);  // Convertir a mph
+  serverPath += "&windgustmph=";
+  serverPath += String(sensor.windSpeedMax * 1.60934);  // Convertir a mph
+  serverPath += "&winddir=";
+  serverPath += String(sensor.windDirectiongradiant);
+  serverPath += "&rainin=";
+  serverPath += String(rainData.intervalRainfall * 0.0393701);  // Convertir a pulgadas
+
+  // Agregar otros parámetros según tus sensores y la documentación de PWSweather
+  // Ejemplos:
+  // serverPath += "&UV=";
+  // serverPath += String(sensor.UVIndex);
+  // serverPath += "&solar=";
+  // serverPath += String(sensor.lux);
+
+
+  Serial.print("Enviando petición a: ");
+  Serial.println(serverPath);
+
+  http.begin(serverPath);
+  int httpResponseCode = http.GET();
+
+  if (httpResponseCode > 0) {
+    Serial.print("Código de respuesta HTTP: ");
+    Serial.println(httpResponseCode);
+    if (httpResponseCode == HTTP_CODE_OK) {
+      String payload = http.getString();
+      Serial.println("Respuesta del servidor:");
+      Serial.println(payload);
+    }
   } else {
-    Serial.println("la conexión falló");
+    Serial.print("Error al enviar la petición: ");
+    Serial.println(http.errorToString(httpResponseCode));
   }
-  client.print(WEBPAGE5);
-  client.print("ID=");
-  client.print(ID5);
-  client.print("&PASSWORD=");
-  client.print(Key5);
-  client.print("&tempf=");
-  client.print(sensor.temperatureAHT);
-  client.print("&humidity=");
-  client.print(sensor.humidity);
-  client.print("&uvi=");
-  client.print(sensor.UVIndex);
-  client.print("&tvoc=");
-  client.print(sensor.tvoc);
-  client.print("&CO=");
-  client.print(sensor.c02);
-  client.print("&baromin=");
-  client.print(sensor.barometricPressure);
-  client.print("&windDirectiongradiant=");
-  client.print(sensor.windDirectiongradiant);
-  client.print("&windSpeed=");
-  client.print(sensor.windSpeed);
-  client.print("&lux=");
-  client.print(sensor.lux);
-  client.print("&rainTicks60m=");
-  client.print(sensor.rainTicks60m);
-  client.print("&rainTicks24h=");
-  client.print(sensor.rainTicks24h);
-  client.print("&softwaretype=NodeMCU-ESP12&action=updateraw");
-  client.print("/ HTTP/1.1\r\nHost: pwsupdate.pwsweather.com:80\r\nConnection: close\r\n\r\n");
-  Serial.println(" ");
-  delay(1000);
+
+  http.end();
 }
