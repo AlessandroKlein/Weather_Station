@@ -21,9 +21,11 @@ void handleRoot() {
   // ThingSpeak
   html += "<h3>ThingSpeak</h3>";
   html += "<label for='thingspeak_enabled'>Habilitar ThingSpeak:</label>";
-  html += "<input type='checkbox' id='thingspeak_enabled' name='thingspeak_enabled' " + String(thingspeak_enabled ? "checked" : "") + " onchange='toggleField(\"thingspeak_enabled\", \"ts_api_key\")'>";
+  html += "<input type='checkbox' id='thingspeak_enabled' name='thingspeak_enabled' " + String(thingspeak_enabled ? "checked" : "") + " onchange='toggleField(\"thingspeak_enabled\", [\"ts_api_key\", \"channelID\"])'>";
   html += "<label for='ts_api_key'>ThingSpeak API Key:</label>";
   html += "<input type='text' id='ts_api_key' name='ts_api_key' value='" + String(ts_api_key) + "' " + String(thingspeak_enabled ? "" : "disabled") + ">";
+  html += "<label for='channelID'>Channel ID:</label>";
+  html += "<input type='text' id='channelID' name='channelID' value='" + String(channelID) + "' " + String(thingspeak_enabled ? "" : "disabled") + ">";
 
   // Weathercloud
   html += "<h3>Weathercloud</h3>";
@@ -85,6 +87,12 @@ void handleSave() {
     temp = temp.substring(0, MAX_API_KEY_LENGTH);
     strcpy(ID2, temp.c_str());
   }
+  if (server.hasArg("channelID")) {
+    String temp = server.arg("channelID");
+    //channelID = temp.toInt();  // Convertir a número
+    temp = temp.substring(0, MAX_API_KEY_LENGTH);  // Limitar longitud
+    channelID = temp.toInt();  // Convertir a número
+  }
   if (server.hasArg("Key2")) {
     // Limitar el tamaño de la clave de Weathercloud
     String temp = server.arg("Key2");
@@ -109,20 +117,6 @@ void handleSave() {
     temp = temp.substring(0, MAX_API_KEY_LENGTH);
     strcpy(Key5, temp.c_str());
   }
-
-  // Manejo de los checkboxes
-  /*if (server.hasArg("weathercloud_enabled")) {
-    weathercloud_enabled = server.hasArg("weathercloud_enabled") && server.arg("weathercloud_enabled") == "on";
-  }
-  if (server.hasArg("thingspeak_enabled")) {
-    thingspeak_enabled = server.hasArg("thingspeak_enabled") && server.arg("thingspeak_enabled") == "on";
-  }
-  if (server.hasArg("windy_enabled")) {
-    windy_enabled = server.hasArg("windy_enabled") && server.arg("windy_enabled") == "on";
-  }
-  if (server.hasArg("pwsweather_enabled")) {
-    pwsweather_enabled = server.hasArg("pwsweather_enabled") && server.arg("pwsweather_enabled") == "on";
-  }*/
   weathercloud_enabled = server.hasArg("weathercloud_enabled") && server.arg("weathercloud_enabled") == "on";
   thingspeak_enabled = server.hasArg("thingspeak_enabled") && server.arg("thingspeak_enabled") == "on";
   windy_enabled = server.hasArg("windy_enabled") && server.arg("windy_enabled") == "on";
@@ -143,7 +137,7 @@ void handleSave() {
   html += "</style>";
   html += "</head><body>";
   html += "<h1>Configuración guardada</h1>";
-  html += "<p><strong>ThingSpeak API Key:</strong> " + String(ts_api_key) + " | " + String(thingspeak_enabled ? "Habilitado" : "Deshabilitado") + "</p>";
+  html += "<p><strong>ThingSpeak API Key:</strong> " + String(ts_api_key) + " | <strong>channelID:</strong> " + String(channelID) + " | " + String(thingspeak_enabled ? "Habilitado" : "Deshabilitado") + "</p>";
   html += "<p><strong>Weathercloud ID:</strong> " + String(ID2) + " | <strong>Key:</strong> " + String(Key2) + " | " + String(weathercloud_enabled ? "Habilitado" : "Deshabilitado") + "</p>";
   html += "<p><strong>Windy Endpoint:</strong> " + String(WINDYPAGE) + " | " + String(windy_enabled ? "Habilitado" : "Deshabilitado") + "</p>";
   html += "<p><strong>Pwsweather ID:</strong> " + String(ID5) + " | <strong>Key:</strong> " + String(Key5) + " | " + String(pwsweather_enabled ? "Habilitado" : "Deshabilitado") + "</p>";

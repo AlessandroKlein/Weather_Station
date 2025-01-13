@@ -1,8 +1,8 @@
 #pragma once
 
 //Hardware build target: ESP32
-#define VERSION "0.0.3"
-#define DEVICE_NAME "WeatherStation"
+#define VERSION "0.0.4"
+#define DEVICE_NAME "Weather_Station"
 
 // Intervalos de tiempo (ms)
 const unsigned long MEASUREMENT_INTERVAL = 300000;  // 5 minutos

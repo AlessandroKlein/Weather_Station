@@ -47,14 +47,16 @@ Adafruit_CCS811 ccs;  // Crear una instancia del sensor CCS811
 // Credenciales de ThingSpeak
 const char* server3 = "api.thingspeak.com";
 char ts_api_key[MAX_API_KEY_LENGTH + 1] = "";  // Thingspeak API Key
-unsigned long channelID = 2801433;
+long unsigned int channelID;
 // Credenciales de weathercloud
 const char* server2 = "api.weathercloud.net";
 char ID2[MAX_API_KEY_LENGTH + 1] = "";   // Weathercloud.net ID
 char Key2[MAX_API_KEY_LENGTH + 1] = "";  // Weathercloud.net Key
 // Credenciales de windy
 char server4[] = "stations.windy.com";
+char serverurl[] = "/pws/station/";
 char WINDYPAGE[MAX_API_KEY_LENGTH_WINDYPAGE + 1] = "";  // Windy API endpoint
+int serverPort = 443;
 // Credenciales de pwsweather
 char server5[] = "pwsupdate.pwsweather.com";
 char WEBPAGE5[] = "GET /api/v1/submitwx?";
@@ -155,8 +157,6 @@ void setup() {
   setubahtbmp();
   setupBH1750();
   setupDS18B20();
-
-  ThingSpeak.begin(client);
 
 #ifdef demo
   readSensors();

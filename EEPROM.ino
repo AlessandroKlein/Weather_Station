@@ -39,10 +39,12 @@ void readConfig() {
   EEPROM.get(311, thingspeak_enabled);
   EEPROM.get(312, windy_enabled);
   EEPROM.get(313, pwsweather_enabled);
+  EEPROM.get(314, channelID);  // Cargar channelID desde EEPROM ts
   EEPROM.end();
 #ifdef SerialMonitor
   Serial.println("EEPROM: ");
   Serial.println(String(ts_api_key));
+  Serial.println(channelID);
   Serial.println(ID2);
   Serial.println(Key2);
   Serial.println(WINDYPAGE);
