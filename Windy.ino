@@ -47,16 +47,24 @@ String getSensorDataJSON() {
 void windy(void) {
   HTTPClient http;
 
-  String url = String("https://") + server4 /*+ ":" + String(serverPort)*/ + serverurl + WINDYPAGE;  // Construcción de la URL (más concisa)
-  //http.begin(url, true); // Habilitar verificación SSL
-
-  Serial.print("Enviando petición a Windy: ");
+  String url = String("https://") + server4 + serverurl + WINDYPAGE;
+#ifdef SerialMonitor
+  Serial.print("Enviando petición a Windy (POST): ");
   Serial.println(url);
+#endif
 
-  http.begin(url, true); // Inicializar la conexión *solo una vez* con verificación SSL
+  http.begin(url, true);
+  http.addHeader("Content-Type", "application/json");  // Importante: indicar que se envía JSON
 
-  int httpResponseCode = http.GET();
+  String jsonData = getSensorDataJSON();  // Obtener el JSON
+#ifdef SerialMonitor
+  Serial.print("JSON a enviar: ");
+  Serial.println(jsonData);
+#endif
 
+  int httpResponseCode = http.POST(jsonData);  // Enviar el JSON en el cuerpo de la petición
+
+#ifdef SerialMonitor
   if (httpResponseCode > 0) {
     Serial.print("Código de respuesta HTTP de Windy: ");
     Serial.println(httpResponseCode);
@@ -66,12 +74,13 @@ void windy(void) {
       Serial.println(payload);
     } else {
       Serial.print("Respuesta de Windy (error): ");
-      Serial.println(http.getString());  // Imprimir el mensaje de error del servidor
+      Serial.println(http.getString());
     }
   } else {
     Serial.print("Error al enviar la petición a Windy: ");
     Serial.println(http.errorToString(httpResponseCode));
   }
+#endif
 
   http.end();
 }

@@ -43,9 +43,9 @@ IPAddress ip(172, 20, 15, 248);
 // Variables para la hora y temporizador
 //===========================================
 // Variables para la hora y temporizador
-//const long interval = 300000;  // Intervalo de 5 minutos en milisegundos (300000 ms)
+const long interval = 300000;  // Intervalo de 5 minutos en milisegundos (300000 ms)
 //const long interval = 180000;  // Intervalo de 3 minutos en milisegundos (180000 ms)
-const long interval = 90000; 
+//const long interval = 90000; 
 
 //===========================================
 // WH-SP-WS01

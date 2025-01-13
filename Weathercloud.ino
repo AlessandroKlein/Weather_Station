@@ -44,11 +44,14 @@ void weathercloud(void) {
   String json;
   serializeJson(doc, json);
 
+#ifdef SerialMonitor
   Serial.println("Enviando JSON:");
   Serial.println(json);
+#endif
 
   int httpResponseCode = http.POST(json);
 
+#ifdef SerialMonitor
   if (httpResponseCode > 0) {
     Serial.print("Código de respuesta HTTP: ");
     Serial.println(httpResponseCode);
@@ -61,6 +64,7 @@ void weathercloud(void) {
     Serial.print("Error al enviar la petición: ");
     Serial.println(http.errorToString(httpResponseCode));
   }
+#endif
 
   http.end();
 }

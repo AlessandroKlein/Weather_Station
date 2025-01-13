@@ -1,7 +1,7 @@
 #pragma once
 
 //Hardware build target: ESP32
-#define VERSION "0.0.4"
+#define VERSION "0.0.5"
 #define DEVICE_NAME "Weather_Station"
 
 // Intervalos de tiempo (ms)

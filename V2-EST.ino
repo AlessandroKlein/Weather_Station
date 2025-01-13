@@ -158,10 +158,11 @@ void setup() {
   setupBH1750();
   setupDS18B20();
 
+  ThingSpeak.begin(client);
+
 #ifdef demo
   readSensors();
   sensordemoprint();
-  thingspeak();
 #ifdef SerialMonitor
     Serial.println("Datos demo actualizados");
 #endif

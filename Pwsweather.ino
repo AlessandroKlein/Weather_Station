@@ -76,8 +76,10 @@ void pws(void) {
   serverPath += "&co2=";
   serverPath += String(sensor.c02);
 
+#ifdef SerialMonitor
   Serial.print("Enviando petición a: ");
   Serial.println(serverPath);
+#endif
 
   http.begin(serverPath);
   httpResponseCode = http.GET();
