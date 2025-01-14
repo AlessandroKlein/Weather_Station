@@ -1,10 +1,5 @@
-# Flasheo 
+# Estación Meteorológica con ESP32
 
-## Carga estos tres archivos con los siguientes offsets:
-        * bootloader.bin: Offset 0x1000
-        * partitions.bin: Offset 0x8000
-        * Weather_Station.bin: Offset 0x10000
+Este proyecto implementa una estación meteorológica diseñada con un **ESP32**, capaz de medir diversas variables climáticas utilizando una variedad de sensores y configurar parámetros mediante una página web intuitiva. La estación es compatible con varias APIs para el envío de datos a servicios en la nube como **ThingSpeak**, **Weathercloud**, **Windy**, y **Pwsweather**. 
 
-___
-
-* Si tu herramienta de flasheo permite cargar un único archivo binario, utiliza Weather_Station.merged.bin. Este archivo ya incluye el bootloader, las particiones y el firmware.
+Para más información, consulte la [documentación completa](https://github.com/AlessandroKlein/Weather_Station/wiki/Home) o los diagramas incluidos.
