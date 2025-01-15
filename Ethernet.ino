@@ -1,38 +1,29 @@
 void Ethernet() {
+  // Intentar conectar a WiFi
   if (!wifiManager.autoConnect(DEVICE_NAME, "estacion1234")) {
 #ifdef SerialMonitor
     Serial.println("Falló la conexión y expiró el tiempo de espera");
 #endif
-    ESP.restart();
+    ESP.restart();  // Reiniciar el dispositivo si no se conecta
   }
+
 #ifdef SerialMonitor
+  // Imprimir información sobre la conexión WiFi
   Serial.println("Conectado a WiFi: " + WiFi.SSID());
   Serial.print("Dirección IP: ");
   Serial.println(WiFi.localIP());
 #endif
 
-  // Inicializar mDNS para que puedas acceder a tu dispositivo usando una URL .local
-  if (MDNS.begin(String(DEVICE_NAME))) {  // "esp32" es el nombre que se usará en la URL
-    MonPrintf("mDNS iniciado \n");
-    MonPrintf("Accede a la página web de ESP32 en: ");
-    MonPrintf("http://"+ String(DEVICE_NAME) + ".local/ \n");  // Usa el nombre que has elegido para mDNS
+  // Inicializar mDNS para acceso local a través de .local
+  if (MDNS.begin(DEVICE_NAME)) {
+#ifdef SerialMonitor
+    Serial.println("mDNS iniciado\n");
+    Serial.printf("Accede a la página web de ESP32 en: http://%s.local/\n", DEVICE_NAME);
+    Serial.println();
+#endif
   } else {
-    MonPrintf("Error al iniciar mDNS\n");
+#ifdef SerialMonitor
+    Serial.println("Error al iniciar mDNS\n");
+#endif
   }
 }
-
-//===========================================
-// MDNS
-//===========================================
-//MDNS setup
-/*void nombre_red_stup() {
-  if (!MDNS.begin("ecohaven")) {
-    MonPrintf("Erro configurando mDNS!");
-    while (1) {
-      delay(1000);
-    }
-  }
-  MonPrintf("mDNS configurado");
-  MonPrintf("Accede a la página web de ESP32 en: ");
-  MonPrintf("http://estacion.local/ \n");
-}*/

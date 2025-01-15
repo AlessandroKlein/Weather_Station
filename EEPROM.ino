@@ -3,6 +3,8 @@
 //===================================================
 void saveConfig() {
   EEPROM.begin(512);
+
+  // Guardar configuración
   EEPROM.put(0, ts_api_key);
   EEPROM.put(34, ID2);
   EEPROM.put(68, Key2);
@@ -13,14 +15,18 @@ void saveConfig() {
   EEPROM.write(311, thingspeak_enabled);
   EEPROM.write(312, windy_enabled);
   EEPROM.write(313, pwsweather_enabled);
+
   EEPROM.commit();
   EEPROM.end();
-  //Serial.println("Configuración guardada en EEPROM");
 
-  MonPrintf(String("weathercloud ") + String(weathercloud_enabled) + "\n");
-  MonPrintf(String("thingspeak ") + String(thingspeak_enabled) + "\n");
-  MonPrintf(String("windy ") + String(windy_enabled) + "\n");
-  MonPrintf(String("pwsweather ") + String(pwsweather_enabled) + "\n");
+  // Mensajes de depuración
+#ifdef SerialMonitor
+  Serial.println("Configuración guardada en EEPROM\n");
+  Serial.println("weathercloud: " + String(weathercloud_enabled) + "\n");
+  Serial.println("thingspeak: " + String(thingspeak_enabled) + "\n");
+  Serial.println("windy: " + String(windy_enabled) + "\n");
+  Serial.println("pwsweather: " + String(pwsweather_enabled) + "\n");
+#endif
 }
 
 //===================================================
@@ -29,6 +35,8 @@ void saveConfig() {
 
 void readConfig() {
   EEPROM.begin(512);
+
+  // Cargar configuración desde EEPROM
   EEPROM.get(0, ts_api_key);
   EEPROM.get(34, ID2);
   EEPROM.get(68, Key2);
@@ -39,21 +47,26 @@ void readConfig() {
   EEPROM.get(311, thingspeak_enabled);
   EEPROM.get(312, windy_enabled);
   EEPROM.get(313, pwsweather_enabled);
-  EEPROM.get(314, channelID);  // Cargar channelID desde EEPROM ts
+  EEPROM.get(314, channelID);  // Cargar channelID desde EEPROM
+
   EEPROM.end();
+
+  // Convertir channelID a String
   sprintf(channelIDStr, "%lu", channelID);
+
+  // Impresión de los valores leídos
 #ifdef SerialMonitor
-  Serial.println("EEPROM: ");
-  Serial.println(String(ts_api_key));
-  Serial.println(channelID);
-  Serial.println(ID2);
-  Serial.println(Key2);
-  Serial.println(WINDYPAGE);
-  Serial.println(ID5);
-  Serial.println(Key5);
-  Serial.println(weathercloud_enabled);
-  Serial.println(thingspeak_enabled);
-  Serial.println(windy_enabled);
-  Serial.println(pwsweather_enabled);
+  Serial.println("Configuración cargada desde EEPROM:");
+  Serial.println("ts_api_key: " + String(ts_api_key));
+  Serial.println("channelID: " + String(channelID));
+  Serial.println("ID2: " + String(ID2));
+  Serial.println("Key2: " + String(Key2));
+  Serial.println("WINDYPAGE: " + String(WINDYPAGE));
+  Serial.println("ID5: " + String(ID5));
+  Serial.println("Key5: " + String(Key5));
+  Serial.println("weathercloud_enabled: " + String(weathercloud_enabled));
+  Serial.println("thingspeak_enabled: " + String(thingspeak_enabled));
+  Serial.println("windy_enabled: " + String(windy_enabled));
+  Serial.println("pwsweather_enabled: " + String(pwsweather_enabled));
 #endif
 }

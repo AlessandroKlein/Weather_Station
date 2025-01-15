@@ -193,6 +193,7 @@ String handleWebPage = R"rawliteral(
 //===========================================
 //OTA Web
 //===========================================
+#ifdef OTAWeb
 String handleHomePageOTA = R"rawliteral(
 <!DOCTYPE html>
 
@@ -314,7 +315,7 @@ String handleHomePageOTA = R"rawliteral(
 
 </html>
 )rawliteral";
-
+#endif
 //===========================================
 //Config Web
 //===========================================

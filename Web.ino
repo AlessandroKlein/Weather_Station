@@ -8,84 +8,8 @@ void handleCSS(AsyncWebServerRequest *request) {
 }
 
 //===========================================
-//Config Web
+//Salve Web
 //===========================================
-/*void handleRoot(AsyncWebServerRequest *request) {
-  String html = "<!DOCTYPE html><html><head>";
-  html += "<meta charset='UTF-8'>";  // Especifica UTF-8 como codificación de caracteres
-  html += "<title>Configuración Estación meteorológica</title>";
-  html += "<style>";
-  html += "body { font-family: Arial, sans-serif; margin: 20px; background-color: #0E0E0E; color: #CCCCCC; }";
-  html += "h1 { text-align: center; color: #00ABE4; }";
-  html += "form { max-width: 600px; margin: auto; background: #000; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }";
-  html += "h3 { color: #00ABE4; }";
-  html += "label { display: block; margin-bottom: 8px; font-weight: bold; }";
-  html += "input[type='text'], input[type='checkbox'] { margin-bottom: 20px; width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }";
-  html += "input[type='submit'] { background-color: #00ABE4; color: white; border: none; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; border-radius: 4px; cursor: pointer; }";
-  html += "input[type='submit']:hover { background-color: #00ABE4; }";
-  html += "</style>";
-  html += "</head><body>";
-  html += "<h1>Configuración de API Keys</h1>";
-
-  // Formulario con los datos para la configuración
-  html += "<form action='/save' method='POST'>";
-
-  // ThingSpeak
-  html += "<h3>ThingSpeak</h3>";
-  html += "<label for='thingspeak_enabled'>Habilitar ThingSpeak:</label>";
-  html += "<input type='checkbox' id='thingspeak_enabled' name='thingspeak_enabled' " + String(thingspeak_enabled ? "checked" : "") + " onchange='toggleField(\"thingspeak_enabled\", [\"ts_api_key\", \"channelID\"])'>";
-  html += "<label for='ts_api_key'>ThingSpeak API Key:</label>";
-  html += "<input type='text' id='ts_api_key' name='ts_api_key' value='" + String(ts_api_key) + "' " + String(thingspeak_enabled ? "" : "disabled") + ">";
-  html += "<label for='channelID'>Channel ID:</label>";
-  html += "<input type='text' id='channelID' name='channelID' value='" + String(channelID) + "' " + String(thingspeak_enabled ? "" : "disabled") + ">";
-
-  // Weathercloud
-  html += "<h3>Weathercloud</h3>";
-  html += "<label for='weathercloud_enabled'>Habilitar Weathercloud.net:</label>";
-  html += "<input type='checkbox' id='weathercloud_enabled' name='weathercloud_enabled' " + String(weathercloud_enabled ? "checked" : "") + " onchange='toggleField(\"weathercloud_enabled\", [\"ID2\", \"Key2\"])'>";
-  html += "<label for='ID2'>Weathercloud ID:</label>";
-  html += "<input type='text' id='ID2' name='ID2' value='" + String(ID2) + "' " + String(weathercloud_enabled ? "" : "disabled") + ">";
-  html += "<label for='Key2'>Weathercloud Key:</label>";
-  html += "<input type='text' id='Key2' name='Key2' value='" + String(Key2) + "' " + String(weathercloud_enabled ? "" : "disabled") + ">";
-
-  // Windy
-  html += "<h3>Windy</h3>";
-  html += "<label for='windy_enabled'>Habilitar Windy.com:</label>";
-  html += "<input type='checkbox' id='windy_enabled' name='windy_enabled' " + String(windy_enabled ? "checked" : "") + " onchange='toggleField(\"windy_enabled\", \"WINDYPAGE\")'>";
-  html += "<label for='WINDYPAGE'>Windy API Endpoint:</label>";
-  html += "<input type='text' id='WINDYPAGE' name='WINDYPAGE' value='" + String(WINDYPAGE) + "' " + String(windy_enabled ? "" : "disabled") + ">";
-
-  // Pwsweather
-  html += "<h3>Pwsweather</h3>";
-  html += "<label for='pwsweather_enabled'>Habilitar Pwsweather.com:</label>";
-  html += "<input type='checkbox' id='pwsweather_enabled' name='pwsweather_enabled' " + String(pwsweather_enabled ? "checked" : "") + " onchange='toggleField(\"pwsweather_enabled\", [\"ID5\", \"Key5\"])'>";
-  html += "<label for='ID5'>Pwsweather ID:</label>";
-  html += "<input type='text' id='ID5' name='ID5' value='" + String(ID5) + "' " + String(pwsweather_enabled ? "" : "disabled") + ">";
-  html += "<label for='Key5'>Pwsweather Key:</label>";
-  html += "<input type='text' id='Key5' name='Key5' value='" + String(Key5) + "' " + String(pwsweather_enabled ? "" : "disabled") + ">";
-
-  html += "<input type='submit' value='Guardar'>";
-  html += "</form>";
-
-  // JavaScript para habilitar/deshabilitar campos
-  html += "<script>";
-  html += "function toggleField(checkboxId, fields) {";
-  html += "    if (!Array.isArray(fields)) fields = [fields];";
-  html += "    const isChecked = document.getElementById(checkboxId).checked;";
-  html += "    fields.forEach(fieldId => {";
-  html += "        const field = document.getElementById(fieldId);";
-  html += "        if (field) field.disabled = !isChecked;";
-  html += "    });";
-  html += "}";
-  html += "</script>";
-
-  html += "</body></html>";
-
-  //server.send(200, "text/html", html);
-  request->send(200, "text/html", html);
-}
-*/
-
 // Función para limitar la longitud de las cadenas antes de guardarlas
 
 void handleSave(AsyncWebServerRequest *request) {
@@ -177,12 +101,12 @@ void handleSave(AsyncWebServerRequest *request) {
                     "\"barometricPressure\": \"" + String(sensor.barometricPressure) + "\","
                     "\"UVIndex\": \"" + String(sensor.UVIndex) + "\","
                     "\"lux\": \"" + String(sensor.lux) + "\","
-                    "\"c02\": " + String(sensor.c02) + ","
+                    "\"co2\": " + String(sensor.co2) + ","
                     "\"tvoc\": " + String(sensor.tvoc) + ","
                     "\"windSpeed\": \"" + String(sensor.windSpeed) + "\","
                     "\"windSpeedMax\": \"" + String(sensor.windSpeedMax) + "\","
                     "\"windDirectionADC\": \"" + String(sensor.windDirectionADC) + "\","
-                    "\"windDirectiongradiant\": \"" + String(sensor.windDirectiongradiant) + "\","
+                    "\"windDirectionGradient\": \"" + String(sensor.windDirectionGradient) + "\","
                     "\"rainTicks60m\": \"" + String(sensor.rainTicks60m) + "\","
                     "\"rainTicks24h\": \"" + String(sensor.rainTicks24h) + "\""
                     "}";
@@ -197,12 +121,12 @@ void handleGetDataRequest(AsyncWebServerRequest *request) {
   jsonDoc["barometricPressure"] = sensor.barometricPressure;
   jsonDoc["UVIndex"] = sensor.UVIndex;
   jsonDoc["lux"] = sensor.lux;
-  jsonDoc["c02"] = sensor.c02;
+  jsonDoc["co2"] = sensor.co2;
   jsonDoc["tvoc"] = sensor.tvoc;
   jsonDoc["windSpeed"] = sensor.windSpeed;
   jsonDoc["windSpeedMax"] = sensor.windSpeedMax;
   jsonDoc["windDirectionADC"] = sensor.windDirectionADC;
-  jsonDoc["windDirectiongradiant"] = sensor.windDirectiongradiant;
+  jsonDoc["windDirectionGradient"] = sensor.windDirectionGradient;
   jsonDoc["rainTicks60m"] = sensor.rainTicks60m;
   jsonDoc["rainTicks24h"] = sensor.rainTicks24h;
 

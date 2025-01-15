@@ -1,11 +1,11 @@
 String getSensorDataJSON() {
-  const size_t capacity = JSON_OBJECT_SIZE(16) + JSON_OBJECT_SIZE(9) + 24 * JSON_ARRAY_SIZE(1) + 5 * JSON_ARRAY_SIZE(1) + 384;  // Estimación del tamaño del documento
+  const size_t capacity = JSON_OBJECT_SIZE(16) + JSON_OBJECT_SIZE(9) + 24 * JSON_ARRAY_SIZE(1) + 5 * JSON_ARRAY_SIZE(1) + 384;
   StaticJsonDocument<capacity> doc;
 
   // Agregar datos de sensorData
   JsonObject sensorDataJson = doc.createNestedObject("sensorData");
   sensorDataJson["windDirectionADC"] = sensor.windDirectionADC;
-  sensorDataJson["windDirectiongradiant"] = sensor.windDirectiongradiant;
+  sensor.windDirectionGradient = convertToDegrees(sensor.windDirectionADC);
   sensorDataJson["rainTicks24h"] = sensor.rainTicks24h;
   sensorDataJson["rainTicks60m"] = sensor.rainTicks60m;
   sensorDataJson["temperatureC"] = sensor.temperatureC;
@@ -17,22 +17,12 @@ String getSensorDataJSON() {
   sensorDataJson["humidity"] = sensor.humidity;
   sensorDataJson["UVIndex"] = sensor.UVIndex;
   sensorDataJson["lux"] = sensor.lux;
-  sensorDataJson["c02"] = sensor.c02;
+  sensorDataJson["co2"] = sensor.co2;
   sensorDataJson["tvoc"] = sensor.tvoc;
 
   // Agregar datos de rainfallData
   JsonObject rainfallDataJson = doc.createNestedObject("rainfallData");
   rainfallDataJson["intervalRainfall"] = rainData.intervalRainfall;
-
-  JsonArray hourlyRainfallArray = rainfallDataJson.createNestedArray("hourlyRainfall");
-  for (int i = 0; i < 24; i++) {
-    hourlyRainfallArray.add(rainData.hourlyRainfall[i]);
-  }
-
-  JsonArray current60MinRainfallArray = rainfallDataJson.createNestedArray("current60MinRainfall");
-  for (int i = 0; i < 5; i++) {
-    current60MinRainfallArray.add(rainData.current60MinRainfall[i]);
-  }
 
   rainfallDataJson["hourlyCarryover"] = rainData.hourlyCarryover;
   rainfallDataJson["priorHour"] = rainData.priorHour;
@@ -44,10 +34,17 @@ String getSensorDataJSON() {
   return json;
 }
 
+void addRainfallArray(JsonObject& parent, const char* name, float* data, size_t length) {
+  JsonArray array = parent.createNestedArray(name);
+  for (size_t i = 0; i < length; i++) {
+    array.add(data[i]);
+  }
+}
+
 void windy(void) {
   HTTPClient http;
-
   String url = String("https://") + server4 + serverurl + WINDYPAGE;
+
 #ifdef SerialMonitor
   Serial.print("Enviando petición a Windy (POST): ");
   Serial.println(url);

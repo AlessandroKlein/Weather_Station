@@ -3,22 +3,21 @@ OneWire oneWire(TEMP_PIN);
 // Pasar la referencia del bus OneWire al objeto DallasTemperature
 DallasTemperature temperatureSensor(&oneWire);
 
-extern "C" {
-  uint8_t temprature_sens_read();
-}
-
-//===========================================
-//DS18B20
-//===========================================
+//==============================
+// Función de inicialización del sensor DS18B20
+//==============================
 void sensorEnable() {
 #ifdef heltec
-  Wire.begin(21, 22);
-  Wire.available();  // Detecta si hay datos pendientes por ser leídos
+  Wire.begin(21, 22);  // Configuración para Heltec (si usas esta placa)
+  Wire.available();     // Detecta si hay datos pendientes por leer
 #else
-  Wire.begin();
+  Wire.begin();         // Configuración genérica de I2C
 #endif
 }
 
+//===========================================
+// Inicialización del sensor DS18B20
+//===========================================
 void setupDS18B20() {
   temperatureSensor.begin();  // Iniciar el sensor DS18B20
 #ifdef SerialMonitor
@@ -26,12 +25,19 @@ void setupDS18B20() {
 #endif
 }
 
+//===========================================
+// Lectura del sensor DS18B20
+//===========================================
 void loopDS18B20() {
   // Solicitar la lectura de las temperaturas
   temperatureSensor.requestTemperatures();
 
+  // Retardo para asegurar que el sensor tenga tiempo para realizar la lectura
+  delay(1000);  // Espera 1 segundo (ajusta si es necesario)
+
   // Obtener la temperatura en grados Celsius
   sensor.temperatureC = temperatureSensor.getTempCByIndex(0);  // 0 es el primer sensor
+
 #ifdef SerialMonitor
   if (sensor.temperatureC != DEVICE_DISCONNECTED_C) {
     // Si el sensor está conectado, imprimir la temperatura
@@ -46,7 +52,7 @@ void loopDS18B20() {
 }
 
 //===========================================
-//AHT20 + BMP280
+// AHT20 + BMP280
 //===========================================
 void setubahtbmp() {
 #ifdef AHTX0BMP280
@@ -55,8 +61,8 @@ void setubahtbmp() {
 #ifdef SerialMonitor
     Serial.println("Error: No se pudo encontrar el sensor AHT20");
 #endif
-    while (1)
-      ;
+    // Aquí podrías hacer un reinicio o salir del programa, si prefieres
+    while (1);  // Mantener en bucle o reiniciar el dispositivo
   }
 #ifdef SerialMonitor
   Serial.println("Sensor AHT20 inicializado");
@@ -65,14 +71,23 @@ void setubahtbmp() {
   // Inicializa el sensor BMP280
   if (!bmp.begin(0x76)) {  // Dirección I2C del BMP280
 #ifdef SerialMonitor
-    Serial.println("Error: No se pudo encontrar el sensor BMP280");
+    Serial.println("Error: No se pudo encontrar el sensor BMP280 en la dirección 0x76");
 #endif
-    while (1)
-      ;
-  }
+    // Intentar con la otra dirección (0x77)
+    if (!bmp.begin(0x77)) {
 #ifdef SerialMonitor
-  Serial.println("Sensor BMP280 inicializado");
+      Serial.println("Error: No se pudo encontrar el sensor BMP280 en la dirección 0x77");
 #endif
+      while (1);  // Detener el programa si no se encuentra el sensor
+    }
+#ifdef SerialMonitor
+    Serial.println("Sensor BMP280 inicializado en la dirección 0x77");
+#endif
+  } else {
+#ifdef SerialMonitor
+    Serial.println("Sensor BMP280 inicializado en la dirección 0x76");
+#endif
+  }
 #endif
 }
 
@@ -87,6 +102,7 @@ void loopahtbmp() {
   // Leer datos del sensor BMP280
   sensor.temperatureBMP = bmp.readTemperature();
   sensor.barometricPressure = bmp.readPressure() / 100.0F;  // Convierte a hPa
+
 #ifdef SerialMonitor
   // Mostrar los datos en el Serial Monitor
   Serial.println("==== Datos del sensor ====");
@@ -111,28 +127,41 @@ void loopahtbmp() {
 }
 
 //===========================================
-//BH1750
+// BH1750
 //===========================================
 void setupBH1750() {
 #ifdef BH1750
-  lightMeter.begin();  // Inicia el sensor BH1750
+  if (lightMeter.begin()) {  // Verifica si el sensor se inicializa correctamente
+#ifdef SerialMonitor
+    Serial.println("Sensor BH1750 inicializado.");
+#endif
+  } else {
+#ifdef SerialMonitor
+    Serial.println("Error: No se pudo inicializar el sensor BH1750.");
+#endif
+    // Aquí podrías reiniciar el dispositivo o tomar alguna acción para manejar el error
+  }
 #endif
 }
 
 void loopBH1750() {
 #ifdef BH1750
   sensor.lux = lightMeter.readLightLevel();  // Lee el valor de la luz en lux
+  
+  if (sensor.lux > 0) {  // Asegura que la lectura es válida
 #ifdef SerialMonitor
-  if (lux != 0.0) {
     Serial.print("Intensidad de luz: ");
     Serial.print(sensor.lux);
     Serial.println(" lux");
+#endif
   } else {
-    Serial.println("No se pudo leer el sensor.");
+#ifdef SerialMonitor
+    Serial.println("Error al leer el sensor BH1750 o lectura inválida.");
+#endif
   }
 #endif
-#endif
 }
+
 
 //===========================================
 //CCS811
@@ -145,7 +174,7 @@ void setupCCS81189() {
     Serial.println("No se pudo encontrar el sensor CCS811");
 #endif
     while (1)
-      ;
+      ;  // Detiene la ejecución si no se encuentra el sensor
   }
 #ifdef SerialMonitor
   Serial.println("Sensor CCS811 listo para leer datos.");
@@ -155,7 +184,8 @@ void setupCCS81189() {
 
 void loopCCS811() {
 #ifdef CCS811
-  / Verifica si el sensor está listo para dar datos if (ccs.available()) {
+  // Verifica si el sensor está listo para dar datos
+  if (ccs.available()) {
     if (!ccs.readData()) {  // Lee los datos del sensor
       // Lee el CO2 en ppm
       sensor.co2 = ccs.geteCO2();
@@ -183,6 +213,7 @@ void loopCCS811() {
 #endif
 }
 
+
 //===========================================
 //S12SD
 //===========================================
@@ -203,22 +234,22 @@ void loopS12SD() {
 }
 
 float convertToUVIndex(int adcValue) {
-  // Convertir ADC a mV
-  float voltage = (adcValue / 4095.0) * 3300;
+  // Convertir ADC a mV (Escala del ADC 12-bit a 3.3V)
+  float voltage = (adcValue * 3.3) / 4095.0;  // 3.3V es el rango de referencia
 
   // Mapear el valor de mV al índice UV según la escala proporcionada
-  if (voltage < 50) return 0;
-  else if (voltage >= 50 && voltage < 227) return 1;
-  else if (voltage >= 227 && voltage < 318) return 2;
-  else if (voltage >= 318 && voltage < 408) return 3;
-  else if (voltage >= 408 && voltage < 503) return 4;
-  else if (voltage >= 503 && voltage < 606) return 5;
-  else if (voltage >= 606 && voltage < 696) return 6;
-  else if (voltage >= 696 && voltage < 795) return 7;
-  else if (voltage >= 795 && voltage < 881) return 8;
-  else if (voltage >= 881 && voltage < 976) return 9;
-  else if (voltage >= 976 && voltage < 1079) return 10;
-  else if (voltage >= 1079) return 11;
+  if (voltage < 0.05) return 0;
+  else if (voltage < 0.227) return 1;
+  else if (voltage < 0.318) return 2;
+  else if (voltage < 0.408) return 3;
+  else if (voltage < 0.503) return 4;
+  else if (voltage < 0.606) return 5;
+  else if (voltage < 0.696) return 6;
+  else if (voltage < 0.795) return 7;
+  else if (voltage < 0.881) return 8;
+  else if (voltage < 0.976) return 9;
+  else if (voltage < 1.079) return 10;
+  else if (voltage >= 1.079) return 11;
 
   return -1;  // Valor no válido
 }

@@ -5,7 +5,7 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <NTPClient.h>
-#include <DNSServer.h>
+//#include <DNSServer.h>
 #include <ESPmDNS.h>  // Librería para mDNS
 
 //#include <WebServer.h>
@@ -18,18 +18,19 @@
 #ifdef OTAWeb
 // OTA
 #include <Update.h>
+#include <LittleFS.h>
 #endif
 
-//#include <LITTLEFS.h>
-#include <LittleFS.h>
 #include <EEPROM.h>
 #include "ThingSpeak.h"
 #include <OneWire.h>
 #include <Wire.h>
 #include <stdlib.h>
 #include <SPI.h>
+/*
 #include <esp_task_wdt.h>
 #include <esp_system.h>
+*/
 #include <DallasTemperature.h>
 
 #ifdef AHTX0BMP280
@@ -58,7 +59,7 @@ Adafruit_CCS811 ccs;  // Crear una instancia del sensor CCS811
 const char* server3 = "api.thingspeak.com";
 char ts_api_key[MAX_API_KEY_LENGTH + 1] = "";  // Thingspeak API Key
 long unsigned int channelID;
-char channelIDStr[20]; // Asegúrate de que el buffer sea lo suficientemente grande.
+char channelIDStr[20];  // Asegúrate de que el buffer sea lo suficientemente grande.
 // Credenciales de weathercloud
 const char* server2 = "api.weathercloud.net";
 char ID2[MAX_API_KEY_LENGTH + 1] = "";   // Weathercloud.net ID
@@ -117,71 +118,42 @@ unsigned long previousMillis = 0;  // Para almacenar el último tiempo de actual
 void setup() {
   Serial.begin(115200);
 
-  printTitle();
-  definepin();
+  // Convertir channelID a String
+  sprintf(channelIDStr, "%lu", channelID);
 
-  // Inicializar EEPROM y cargar valores guardados
+  // Inicialización general
+  printTitle();
+  //title("Dispositivo: %s | Versión: %s", DEVICE_NAME, VERSION);
+  definepin();
   readConfig();
   Wire.begin();
 
-  // Conectar automáticamente a WiFi
+  // Conectar a Ethernet (o WiFi si es necesario)
   Ethernet();
-  //WiFiManager wifiManager;
-  /*if (!wifiManager.autoConnect("ESP32_AP", "password123")) {
-    Serial.println("Falló la conexión y expiró el tiempo de espera");
-    ESP.restart();
-  }
 
-  Serial.println("Conectado a WiFi: " + WiFi.SSID());
-  Serial.print("Dirección IP: ");
-  Serial.println(WiFi.localIP());*/
+  // Configuración de rutas del servidor web
+  setupServer();
 
-  //nombre_red_stup();
-
-  // Configurar rutas del servidor web
-  //server.on("/", HTTP_GET, handleRoot);
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(200, "text/html", handleWebPage);
-  });
-  server.on("/get_data", HTTP_GET, handleGetDataRequest);
-  //server.on("/config", HTTP_GET, handleRoot);
-  server.on("/config", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", handleRoot.c_str(), processor);
-  });
-
-
-#ifdef OTAWeb
-  server.on("/updateota", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(200, "text/html", handleHomePageOTA);
-  });
-  //server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){request->send(200);}, handleUpdate);
-#endif
-
-   server.on("/save", HTTP_POST, handleSave);
-  // Estilo css
-  server.on("/style.css", HTTP_GET, handleCSS);
-
-  // Pagina no funciona
-  server.onNotFound(notFound);
-
-  // Iniciar el servidor web
-  server.begin();
-  MonPrintf("Servidor web iniciado\n");
-
-  // Iniciar el cliente NTP
+  // Iniciar el cliente NTP y configurar hora
   timeClient.begin();
-  SetupTime();
+  Time();
 
+  // Inicializar sensores y dispositivos
+  initializeSensors();
 
-  sensorEnable();
-  iniciodatos();
-  setubahtbmp();
-  setupBH1750();
-  setupDS18B20();
-
+  // Configurar ThingSpeak
   ThingSpeak.begin(client);
 
+  // Configuración MDNS
+  MDNS.addService("http", "tcp", 80);
+
+  // Mensaje de inicio
+#ifdef SerialMonitor
+  Serial.println("Servidor web iniciado\n");
+#endif
+
 #ifdef demo
+  // Demo de lectura de sensores
   readSensors();
   sensordemoprint();
 
@@ -189,59 +161,79 @@ void setup() {
   Serial.println("Datos demo actualizados");
 #endif
 #endif
-#ifdef SerialMonitor
-  Serial.println("Estacion iniciada");
-#endif
-  //MDNS declaration
-  MDNS.addService("http", "tcp", 80);
-  //MDNS.addService("mqtt", "tcp", mqtt_port);
 
+#ifdef SerialMonitor
+  Serial.println("Estación iniciada");
+#endif
+}
+
+void setupServer() {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/html", handleWebPage);
+  });
+  server.on("/get_data", HTTP_GET, handleGetDataRequest);
+  server.on("/config", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/html", handleRoot.c_str(), processor);
+  });
+
+#ifdef OTAWeb
+  server.on("/updateota", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/html", handleHomePageOTA);
+  });
+#endif
+
+  server.on("/save", HTTP_POST, handleSave);
+  server.on("/style.css", HTTP_GET, handleCSS);
+  server.onNotFound(notFound);
+  server.begin();
+}
+
+void initializeSensors() {
+  sensorEnable();
+  iniciodatos();
+  setubahtbmp();
+  setupBH1750();
+  setupDS18B20();
 }
 
 //===================================================
 // Loop
 //===================================================
 void loop() {
-  // Procesar solicitudes del servidor web
-  //server.handleClient();
-#ifdef pruebas
-
-#else
-
   // Comprobar si han pasado 5 minutos (300000 ms)
   unsigned long currentMillis = millis();
 
   if (currentMillis - previousMillis >= interval) {
-    // Guardar el tiempo actual
     previousMillis = currentMillis;
-    Time();
+    Time();  // Actualizar la hora
+
 #ifdef demo
-    readSensors();
+    readSensors();  // Leer sensores en modo demo
 #ifdef SerialMonitor
     Serial.println("Datos demo actualizados");
-    sensordemoprint();
+    sensordemoprint();  // Imprimir datos de demo
 #endif
 #else
-    measureWindSpeed();  // Medir velocidad del viento
-    readWindDirection();
-    rainloop();
-    loopahtbmp();
-    loopBH1750();
-    loopS12SD();
-    loopDS18B20();
+      // Medir y procesar datos de sensores en modo normal
+    measureWindSpeed();   // Medir velocidad del viento
+    readWindDirection();  // Leer dirección del viento
+    rainloop();           // Procesar lluvia
+    loopahtbmp();         // Procesar sensor BMP
+    loopBH1750();         // Procesar sensor BH1750
+    loopS12SD();          // Procesar sensor S12SD
+    loopDS18B20();        // Procesar sensor DS18B20
 #endif
+
 #ifdef SerialMonitor
     Serial.println("Datos actualizados");
 #endif
 
-    enviardatos();
+    enviardatos();  // Enviar datos
 
 #ifdef SerialMonitor
-    Serial.println("Datos publicado");
+    Serial.println("Datos publicados");
 #endif
-
   }
-#endif
 
-  delay(5000);
+  // No usar delay; se puede realizar otras tareas mientras no han pasado los 5 minutos.
 }

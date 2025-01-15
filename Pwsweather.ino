@@ -9,7 +9,7 @@ void pws(void) {
 
   // Agregar datos de sensorData
   doc["windDirectionADC"] = sensor.windDirectionADC;
-  doc["windDirectiongradiant"] = sensor.windDirectiongradiant;
+  doc["windDirectionGradient"] = sensor.windDirectionGradient;
   doc["rainTicks24h"] = sensor.rainTicks24h;
   doc["rainTicks60m"] = sensor.rainTicks60m;
   doc["temperatureC"] = sensor.temperatureC;
@@ -21,20 +21,11 @@ void pws(void) {
   doc["humidity"] = sensor.humidity;
   doc["UVIndex"] = sensor.UVIndex;
   doc["lux"] = sensor.lux;
-  doc["c02"] = sensor.c02;
+  doc["co2"] = sensor.co2;
   doc["tvoc"] = sensor.tvoc;
 
   // Agregar datos de rainfallData (con arrays anidados)
   JsonObject rainfall = doc.createNestedObject("rainfall");
-  rainfall["intervalRainfall"] = rainData.intervalRainfall;
-  JsonArray hourlyRainfallArray = rainfall.createNestedArray("hourlyRainfall");
-  for (int i = 0; i < 24; i++) {
-    hourlyRainfallArray.add(rainData.hourlyRainfall[i]);
-  }
-  JsonArray current60MinRainfallArray = rainfall.createNestedArray("current60MinRainfall");
-  for (int i = 0; i < 5; i++) {
-    current60MinRainfallArray.add(rainData.current60MinRainfall[i]);
-  }
   rainfall["hourlyCarryover"] = rainData.hourlyCarryover;
   rainfall["priorHour"] = rainData.priorHour;
   rainfall["minuteCarryover"] = rainData.minuteCarryover;
@@ -44,37 +35,32 @@ void pws(void) {
   serializeJson(doc, json);
 
   int httpResponseCode = http.POST(json);
-  // ... (Manejo de la respuesta HTTP de Weathercloud)
+  if (httpResponseCode > 0) {
+#ifdef SerialMonitor
+    Serial.println("Datos enviados correctamente a Weathercloud\n");
+#endif
+  } else {
+#ifdef SerialMonitor
+    Serial.printf("Error al enviar datos a Weathercloud. Código de error: %d\n", httpResponseCode);
+#endif
+  }
   http.end();
 
   // Enviar datos a PWSweather (con GET)
   String serverPath = "http://pwsupdate.pwsweather.com/api/v1/submitwx?";
-  serverPath += "ID=";
-  serverPath += ID5;
-  serverPath += "&PASSWORD=";
-  serverPath += Key5;
-  serverPath += "&dateutc=";
-  serverPath += hour, ":", minute, ":", second;
-  serverPath += "&tempf=";
-  serverPath += String(sensor.temperatureC * 1.8 + 32);
-  serverPath += "&humidity=";
-  serverPath += String(sensor.humidity);
-  serverPath += "&baromin=";
-  serverPath += String(sensor.barometricPressure * 0.02953);
-  serverPath += "&windspeedmph=";
-  serverPath += String(sensor.windSpeed * 1.60934);
-  serverPath += "&windgustmph=";
-  serverPath += String(sensor.windSpeedMax * 1.60934);
-  serverPath += "&winddir=";
-  serverPath += String(sensor.windDirectiongradiant);
-  serverPath += "&rainin=";
-  serverPath += String(rainData.intervalRainfall * 0.0393701);
-  serverPath += "&UV=";
-  serverPath += String(sensor.UVIndex);
-  serverPath += "&solar=";
-  serverPath += String(sensor.lux);
-  serverPath += "&co2=";
-  serverPath += String(sensor.c02);
+  serverPath += "ID=" + String(ID5);
+  serverPath += "&PASSWORD=" + String(Key5);
+  serverPath += "&dateutc=" + String(hour) + ":" + String(minute) + ":" + String(second);
+  serverPath += "&tempf=" + String(sensor.temperatureC * 1.8 + 32);
+  serverPath += "&humidity=" + String(sensor.humidity);
+  serverPath += "&baromin=" + String(sensor.barometricPressure * 0.02953);
+  serverPath += "&windspeedmph=" + String(sensor.windSpeed * 1.60934);
+  serverPath += "&windgustmph=" + String(sensor.windSpeedMax * 1.60934);
+  serverPath += "&winddir=" + String(sensor.windDirectionGradient);
+  serverPath += "&rainin=" + String(rainData.intervalRainfall * 0.0393701);
+  serverPath += "&UV=" + String(sensor.UVIndex);
+  serverPath += "&solar=" + String(sensor.lux);
+  serverPath += "&co2=" + String(sensor.co2);
 
 #ifdef SerialMonitor
   Serial.print("Enviando petición a: ");
@@ -83,6 +69,14 @@ void pws(void) {
 
   http.begin(serverPath);
   httpResponseCode = http.GET();
-  // ... (Manejo de la respuesta HTTP de PWSweather)
+  if (httpResponseCode > 0) {
+#ifdef SerialMonitor
+    Serial.println("Datos enviados correctamente a PWSweather\n");
+#endif
+  } else {
+#ifdef SerialMonitor
+    Serial.printf("Error al enviar datos a PWSweather. Código de error: %d\n", httpResponseCode);
+#endif
+  }
   http.end();
 }
