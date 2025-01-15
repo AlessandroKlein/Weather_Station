@@ -66,10 +66,6 @@ sensorData sensor;  // Instanciamos la estructura
 sensorStatus sensorStatusid;
 rainfallData rainData;
 
-// Crear configuración y rangos válidos
-SensorConfig sensorConfig;
-ValidRanges validRanges;
-
 //===========================================
 // iniciodatos: Inicio los datos
 //===========================================

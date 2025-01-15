@@ -1,5 +1,4 @@
 #include "defines.h"
-#include "config.h"
 #include "webs.h"
 
 #include <WiFiManager.h>
@@ -234,9 +233,6 @@ void loop() {
 #ifdef SerialMonitor
     Serial.println("Datos actualizados");
 #endif
-
-    //Leer sensores
-    //SensorManager::SensorData data = sensorManager.readSensors();
 
     enviardatos();
 

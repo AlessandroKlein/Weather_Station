@@ -1,3 +1,9 @@
+//Hardware build target: ESP32
+#define VERSION "0.0.10"
+#define DEVICE_NAME "VentoMeter"
+#define FACTORY "Silbito"
+
+
 //===========================================
 // Pin Defines
 //===========================================
@@ -15,7 +21,7 @@
 //Enable Sensor
 //===========================================
 #define SerialMonitor
-#define demo
+//#define demo
 //#define BH1750Enable
 //#define AHTX0BMP280
 //#define BH1750
@@ -23,7 +29,7 @@
 //#define heltec
 //#define webSocket
 //#define OTAWeb
-#define pruebas
+//#define pruebas
 
 //===========================================
 //Anemometer Calibration
