@@ -51,7 +51,6 @@ char            device_password[15];                    // Contraseña del usuar
 // Zona Otras 
 // -------------------------------------------------------------------
 float           temp_cpu;                              // Temperatura del CPU en °C
-float           temperatureC, temperatureF;            // Temperatura en °C °F
 // -------------------------------------------------------------------
 // Declaración de variables servidor ThingSpeak
 // -------------------------------------------------------------------
@@ -158,3 +157,9 @@ int contador = 0;
 float litros = 0;
 long tiempocontador = 0;
 long tiempohora = 0;
+
+// -------------------------------------------------------------------
+// Zona Firmware
+// ------------------------------------------------------------------- 
+size_t content_len;
+#define U_PART U_SPIFFS

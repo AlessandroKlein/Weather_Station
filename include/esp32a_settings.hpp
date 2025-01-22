@@ -1,16 +1,3 @@
-/* -------------------------------------------------------------------
- ;* AdminESP - ElectronicIOT 2023
- ;* Sitio WEB: https://electroniciot.com
- ;* Correo: admin@electroniciot.com
- ;* Cel_WSP: +591 71243395
- ;* Plataforma: ESP32
- ;* Framework:  Arduino - Platformio - VSC
- ;* Proyecto: Panel Administrativo para el ESP32 con JavaScript
- ;* Nombre: ESP32 Admin Tool v3
- ;* Autor: Ing. Yamir Hidalgo Peña
- ;* -------------------------------------------------------------------
-;*/
-
 // -------------------------------------------------------------------
 // Declaración de funciones
 // -------------------------------------------------------------------

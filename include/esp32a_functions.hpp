@@ -1,16 +1,3 @@
-/* -------------------------------------------------------------------
- ;* AdminESP - ElectronicIOT 2023
- ;* Sitio WEB: https://electroniciot.com
- ;* Correo: admin@electroniciot.com
- ;* Cel_WSP: +591 71243395
- ;* Plataforma: ESP32
- ;* Framework:  Arduino - Platformio - VSC
- ;* Proyecto: Panel Administrativo para el ESP32 con JavaScript
- ;* Nombre: ESP32 Admin Tool v3
- ;* Autor: Ing. Yamir Hidalgo Peña
- ;* -------------------------------------------------------------------
-;*/
-
 // -------------------------------------------------------------------
 // DEFINICION DE FUNCIONES
 // -------------------------------------------------------------------
@@ -167,4 +154,42 @@ void enviardatos() {
             #endif
         }
     }
+}
+
+// -------------------------------------------------------------------
+// Retorna segundos como "d:hh:mm:ss"
+// -------------------------------------------------------------------
+String longTimeStr(const time_t &t){        
+    String s = String(t / SECS_PER_DAY) + ':';
+    if (hour(t) < 10)
+    {
+        s += '0';
+    }
+    s += String(hour(t)) + ':';
+    if (minute(t) < 10)
+    {
+        s += '0';
+    }
+    s += String(minute(t)) + ':';
+    if (second(t) < 10)
+    {
+        s += '0';
+    }
+    s += String(second(t));
+    return s;
+}
+
+// -------------------------------------------------------------------
+// Retorna la calidad de señal WIFI en % => 0 - 100%
+// -------------------------------------------------------------------
+int getRSSIasQuality(int RSSI){
+    int quality = 0;
+    if(RSSI <= -100){
+        quality = 0;
+    }else if (RSSI >= -50){
+        quality = 100;
+    }else{
+       quality = 2 * (RSSI + 100);
+    }
+    return quality;
 }

@@ -1,3 +1,6 @@
+// #define webactivation
+#define SerialMonitor
+
 #include <Arduino.h>
 
 // Wifi
@@ -58,6 +61,11 @@ DallasTemperature sensors(&oneWire);*/
 #include "esp32a_functions.hpp"
 #include "esp32a_settings.hpp"
 #include "esp32a_wifi.hpp"
+#include "esp32a_server.hpp"
+// #include "esp32a_web.hpp"
+#include "esp32a_websockets.hpp"
+
+// otros Sensores
 #include "esp32a_wind.hpp"
 #include "esp32a_rainfall.hpp"
 #include "esp32a_sensor.hpp"
@@ -67,6 +75,7 @@ DallasTemperature sensors(&oneWire);*/
 #include "esp32a_windy.hpp"
 #include "esp32a_pws.hpp"
 
+//#include "esp32a_task.hpp"
 
 void setup()
 {
@@ -95,6 +104,11 @@ void setup()
   // Iniciar el cliente NTP y configurar hora
   timeClient.begin();
   timeClient.update();
+  // inicializar el servidor
+  initServer();
+
+  // iniciar el websockets
+  setupwebsocket();
 
   // Configurar ThingSpeak
   ThingSpeak.begin(client);
@@ -105,6 +119,7 @@ void setup()
 #ifdef SerialMonitor
   Serial.println("Estación iniciada");
 #endif
+  //xTaskCreate(TaskWsSend, "TaskWsSend", 2048, NULL, 1, NULL);
 }
 
 void loop()
@@ -118,7 +133,7 @@ void loop()
   sensordemoprint(); // Imprimir datos de demo
 #endif
 #else
-          // Medir y procesar datos de sensores en modo normal
+                       // Medir y procesar datos de sensores en modo normal
   measureWindSpeed();  // Medir velocidad del viento
   readWindDirection(); // Leer dirección del viento
   rainloop();          // Procesar lluvia
@@ -137,5 +152,8 @@ void loop()
 #ifdef SerialMonitor
   Serial.println("Datos publicados");
 #endif
-  delay(10000);
+#ifdef webactivation
+  sendSensorData();
+#endif
+  delay(interval);
 }
