@@ -8,6 +8,12 @@
         "vector": "cpp",
         "string_view": "cpp",
         "initializer_list": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "*.css": "cpp",
+        "*.woff": "cpp",
+        "*.woff2": "cpp",
+        "*.js": "cpp",
+        "*.html": "cpp",
+        "*.png": "cpp"
     }
 }

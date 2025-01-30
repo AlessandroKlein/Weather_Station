@@ -1,4 +1,4 @@
-// #define webactivation
+//#define webactivation
 #define SerialMonitor
 
 #include <Arduino.h>
