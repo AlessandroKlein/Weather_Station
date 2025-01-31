@@ -26,7 +26,10 @@ void setupwebsocket()
 void wsMessageSend(String msg, String icon, String Type){
 	if(strcmp(Type.c_str(), "info") == 0){
 		String response;
-		DynamicJsonDocument doc(300);
+
+		//DynamicJsonDocument doc(300);
+        JsonDocument doc; // Reemplazar DynamicJsonDocument
+
 		doc["type"] = Type;
 		doc["msg"] = msg;
 		doc["icon"] = icon;

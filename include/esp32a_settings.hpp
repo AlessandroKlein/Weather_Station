@@ -11,7 +11,9 @@ boolean settingsSave();
 boolean settingsRead()
 {
 
-    DynamicJsonDocument jsonSettings(capacitySettings);
+    //DynamicJsonDocument jsonSettings(capacitySettings);
+
+    JsonDocument jsonSettings;
 
     File file = SPIFFS.open("/settings.json", "r");
     if (deserializeJson(jsonSettings, file))
@@ -122,7 +124,10 @@ void settingsReset()
 boolean settingsSave()
 {
     //StaticJsonDocument<capacitySettings> jsonSettings;
-    DynamicJsonDocument jsonSettings(capacitySettings);
+
+    //DynamicJsonDocument jsonSettings(capacitySettings); //<-----
+
+    JsonDocument jsonSettings; // Reemplazar DynamicJsonDocument
 
     File file = SPIFFS.open("/settings.json", "w+");
 

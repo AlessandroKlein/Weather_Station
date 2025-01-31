@@ -28,12 +28,13 @@ void weathercloud()
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
   // 4. Calcular tamaño JSON dinámicamente
-  const size_t capacity = JSON_OBJECT_SIZE(15) +
+  /*const size_t capacity = JSON_OBJECT_SIZE(15) +
                           JSON_OBJECT_SIZE(5) +
                           24 * JSON_ARRAY_SIZE(1) +
                           5 * JSON_ARRAY_SIZE(1) +
                           512;
-  DynamicJsonDocument doc(capacity);
+  DynamicJsonDocument doc(capacity);*/
+  JsonDocument doc;
 
   // 5. Datos principales con movimiento semántico
   JsonObject root = doc.to<JsonObject>();
@@ -52,18 +53,21 @@ void weathercloud()
   root["tvoc"] = static_cast<int>(sensor.tvoc);
 
   // 6. Datos de lluvia optimizados
-  JsonObject rainfall = root.createNestedObject("rainfall");
+  //JsonObject rainfall = root.createNestedObject("rainfall");
+  JsonObject rainfall = root["rainfall"].to<JsonObject>();
   rainfall["intervalRainfall"] = round2(rainData.intervalRainfall);
   rainfall["hourlyCarryover"] = round2(rainData.hourlyCarryover);
   rainfall["priorHour"] = round2(rainData.priorHour);
 
-  JsonArray hourly = rainfall.createNestedArray("hourlyRainfall");
+  //JsonArray hourly = rainfall.createNestedArray("hourlyRainfall");
+  JsonArray hourly = rainfall["hourlyRainfall"].to<JsonArray>();
   for (size_t i = 0; i < sizeof(rainData.hourlyRainfall) / sizeof(rainData.hourlyRainfall[0]); i++)
   {
     hourly.add(rainData.hourlyRainfall[i]);
   }
 
-  JsonArray current60 = rainfall.createNestedArray("current60MinRainfall");
+  //JsonArray current60 = rainfall.createNestedArray("current60MinRainfall");
+  JsonArray current60 = rainfall["current60MinRainfall"].to<JsonArray>();
   for (size_t i = 0; i < sizeof(rainData.current60MinRainfall) / sizeof(rainData.current60MinRainfall[0]); i++)
   {
     current60.add(rainData.current60MinRainfall[i]);

@@ -50,7 +50,7 @@ BH1750 lightMeter; // Crea una instancia del sensor BH1750
 Adafruit_CCS811 ccs; // Crear una instancia del sensor CCS811
 #endif
 #ifdef DEEP_SLEEPoffon
-#include <esp_sleep.h>  // Para funciones de sueño
+#include <esp_sleep.h> // Para funciones de sueño
 #endif
 // -------------------------------------------------------------------
 // Configuración del sensor de temperatura DS18B20
@@ -159,6 +159,7 @@ void setup()
 
   // Inicializar sensores y dispositivos
   initializeSensors();
+  initWindSensors();
 
 #ifdef SerialMonitor
   Serial.println("Estación iniciada");
@@ -189,10 +190,9 @@ void loop()
 #endif
 #else
                        // Medir y procesar datos de sensores en modo normal
-  measureWindSpeed();  // Medir velocidad del viento
-  readWindDirection(); // Leer dirección del viento
-  rainloop();          // Procesar lluvia
-  
+  updateWindSensors();
+  rainloop(); // Procesar lluvia
+
   loopSensors();
 
   updateCalculations();
