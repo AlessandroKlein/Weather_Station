@@ -1,10 +1,11 @@
-//#define webactivation
+// #define webactivation
 #define SerialMonitor
 
 #include <Arduino.h>
 
 // Wifi
 #include <WiFiManager.h>
+#include <ETH.h>
 #include <WIFI.h>
 #include <WiFiUdp.h>
 #include <ESPmDNS.h>
@@ -48,6 +49,9 @@ BH1750 lightMeter; // Crea una instancia del sensor BH1750
 #include <Adafruit_CCS811.h>
 Adafruit_CCS811 ccs; // Crear una instancia del sensor CCS811
 #endif
+#ifdef DEEP_SLEEPoffon
+#include <esp_sleep.h>  // Para funciones de sueño
+#endif
 // -------------------------------------------------------------------
 // Configuración del sensor de temperatura DS18B20
 // -------------------------------------------------------------------
@@ -58,9 +62,9 @@ DallasTemperature sensors(&oneWire);*/
 // Archivos *.hpp - Fragmentar el Código
 // -------------------------------------------------------------------
 #include "esp32a_definitions_variables.hpp"
+#include "esp32a_wifi.hpp"
 #include "esp32a_functions.hpp"
 #include "esp32a_settings.hpp"
-#include "esp32a_wifi.hpp"
 #include "esp32a_server.hpp"
 // #include "esp32a_web.hpp"
 #include "esp32a_websockets.hpp"
@@ -75,8 +79,46 @@ DallasTemperature sensors(&oneWire);*/
 #include "esp32a_windy.hpp"
 #include "esp32a_pws.hpp"
 
-//#include "esp32a_task.hpp"
+#include "esp32a_environmental.hpp"
+#include "esp32a_sql.hpp"
 
+// #include "esp32a_task.hpp"
+
+// -------------------------------------------------------------------
+// DeepSleep
+// -------------------------------------------------------------------
+/*void enterDeepSleep()
+{
+#ifdef DEEP_SLEEPoffon
+  Serial.println("Entrando en Deep Sleep");
+
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_25, 0);
+  // esp_sleep_enable_ext0_wakeup((gpio_num_t)RAIN_PIN, 0);
+
+  esp_sleep_enable_timer_wakeup(interval * 1000);
+  esp_deep_sleep_start();
+#endif
+}*/
+
+void enterDeepSleep()
+{
+#ifdef DEEP_SLEEPoffon
+  Serial.println("Entrando en Deep Sleep");
+
+  // Configurar el sensor para despertar al detectar lluvia
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_25, 0); // Pin 25, nivel bajo
+
+  // Configurar el timer para despertar después de `interval` segundos
+  esp_sleep_enable_timer_wakeup(interval * 1000);
+
+  // Iniciar Deep Sleep
+  esp_deep_sleep_start();
+#endif
+}
+
+// -------------------------------------------------------------------
+// Setup
+// -------------------------------------------------------------------
 void setup()
 {
   Serial.begin(115200);
@@ -97,6 +139,8 @@ void setup()
   gpioDefine();
 
   Wire.begin();
+
+  SPI.begin();
 
   // Conectar a Ethernet (o WiFi si es necesario)
   wifi_setup();
@@ -119,9 +163,20 @@ void setup()
 #ifdef SerialMonitor
   Serial.println("Estación iniciada");
 #endif
-  //xTaskCreate(TaskWsSend, "TaskWsSend", 2048, NULL, 1, NULL);
+  // xTaskCreate(TaskWsSend, "TaskWsSend", 2048, NULL, 1, NULL);
+
+#ifdef DEEP_SLEEPoffon
+  if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TIMER)
+  {
+    // Primera ejecución
+  }
+#endif
+  attachInterrupt(digitalPinToInterrupt(RAIN_PIN), contadorLitros, FALLING);
 }
 
+// -------------------------------------------------------------------
+// Loop
+// -------------------------------------------------------------------
 void loop()
 {
   timeClient.update(); // Actualizar la hora
@@ -137,10 +192,10 @@ void loop()
   measureWindSpeed();  // Medir velocidad del viento
   readWindDirection(); // Leer dirección del viento
   rainloop();          // Procesar lluvia
-  loopahtbmp();        // Procesar sensor BMP
-  loopBH1750();        // Procesar sensor BH1750
-  loopS12SD();         // Procesar sensor S12SD
-  loopDS18B20();       // Procesar sensor DS18B20
+  
+  loopSensors();
+
+  updateCalculations();
 #endif
 
 #ifdef SerialMonitor
@@ -155,5 +210,21 @@ void loop()
 #ifdef webactivation
   sendSensorData();
 #endif
+
+#ifdef DEEP_SLEEPoffon
+  if (rainData.intervalRainfall > 0)
+  {
+    enterDeepSleep(); // Entrar en Deep Sleep si ha llovido
+  }
+  else
+  {
+    delay(1000); // Esperar 1 segundo antes de verificar nuevamente
+  }
+
+/*
+#ifdef DEEP_SLEEPoffon
+  enterDeepSleep();*/
+#else
   delay(interval);
+#endif
 }

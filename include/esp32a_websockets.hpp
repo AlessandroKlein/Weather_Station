@@ -48,7 +48,7 @@ void sendSensorData()
     json += "\"activeTime\":" + longTimeStr(millis() / 1000) + ",";
     json += "\"ramAvailable\":" + String(ESP.getFreeHeap()) + ",";
     json += "\"RAM_SIZE_KB\":" + String(ESP.getHeapSize()) + ",";
-    if (WiFi.status() == WL_CONNECTED)
+    if (!networkConnected())
     {
         json += "\"wifiStatus\":true,";
         json += "\"rssiStatus\":" + String(WiFi.RSSI()) + ",";

@@ -1,92 +1,109 @@
-void contadorLitros()
-{
-  // Asegura que solo se cuenten interrupciones después del umbral de tiempo
-  if (millis() > (tiempocontador + umbraltiempo))
-  {
-    ISRContador++;             // Aumenta el contador de gotas
-    tiempocontador = millis(); // Actualiza el tiempo del contador
-#ifdef SerialMonitor
-    Serial.println(ISRContador); // Muestra el número de gotas detectadas
-#endif
-  }
+// Constantes para mejor legibilidad y mantenimiento
+constexpr uint32_t ONE_HOUR_MS = 3600000UL;
+constexpr uint32_t ONE_MINUTE_MS = 60000UL;
+
+// Configuración de lluvia y tiempo
+struct RainConfig {
+    float mmPerTick = 0.27945f;
+    uint32_t debounceTime = 300;
+    uint8_t resetHour = 0;
+    uint8_t resetMinute = 9;
+};
+
+RainConfig rainConfig;  // Instancia de configuración
+
+// Mutex para manejo de la ISR
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+
+// Función ISR optimizada con protección crítica
+void IRAM_ATTR contadorLitros() {
+    portENTER_CRITICAL_ISR(&mux);
+    static uint32_t lastInterruptTime = 0;
+    uint32_t currentTime = millis();
+
+    // Debounce mecánico y temporal
+    if (currentTime - lastInterruptTime > rainConfig.debounceTime) {
+        ISRContador++;
+        lastInterruptTime = currentTime;
+        lastRainTime = currentTime;  // Para detección de bloqueo
+    }
+    portEXIT_CRITICAL_ISR(&mux);
 }
 
-void rainloop()
-{
-  unsigned long currentMillis = millis(); // Mejor práctica para evitar "millis() overflow" en cálculos repetitivos
-
-  // Si ha pasado una hora (cada 3600 segundos)
-  if (currentMillis - tiempohora >= 3600000UL)
-  {
-    // Guarda la lluvia caída en la hora actual
-    rainData.intervalRainfall = ISRContador * 0.27945; // Calcular los milímetros de lluvia en la hora (ajustar el factor según el sensor)
-
-    // Actualiza el total de lluvia por hora
-    // Desplaza las lluvias de las horas anteriores y añade la lluvia de esta hora
-    for (int i = 23; i > 0; i--)
-    {
-      rainData.hourlyRainfall[i] = rainData.hourlyRainfall[i - 1];
+// Función para manejo de arrays circular
+template<typename T, size_t N>
+void shiftArrayRight(T (&arr)[N]) {
+    for (size_t i = N - 1; i > 0; --i) {
+        arr[i] = arr[i - 1];
     }
-    rainData.hourlyRainfall[0] = rainData.intervalRainfall; // La lluvia más reciente se almacena en la primera posición
+    arr[0] = 0;
+}
 
-    // Calcula la lluvia acumulada por hora (si supera el umbral de tiempo)
-    rainData.hourlyCarryover = rainData.intervalRainfall + rainData.priorHour;
+void rainloop() {
+    uint32_t currentMillis = millis();
+    static uint32_t lastHourCheck = currentMillis;
+    static uint32_t lastMinuteCheck = currentMillis;
 
-    // Actualiza el total de lluvia de la hora previa
-    rainData.priorHour = rainData.intervalRainfall;
-
-    sensor.rainTicks24h = ISRContador * 0.27945;            // Los ticks de lluvia en las últimas 24 horas
-    sensor.rainTicks60m = rainData.current60MinRainfall[4]; // Los ticks de lluvia de los últimos 60 minutos
-
-    // Muestra la lluvia de la hora y del día
+    // Detección de bloqueo del pluviómetro
+    if (currentMillis - lastMaintenanceCheck >= ONE_HOUR_MS) {
+        if (currentMillis - lastRainTime > ONE_HOUR_MS) {
 #ifdef SerialMonitor
-    Serial.print("Lluvia en esta hora (mm): ");
-    Serial.println(rainData.intervalRainfall);
-    Serial.print("Lluvia total del día (mm): ");
-    Serial.println(rainData.hourlyCarryover);
+            Serial.println("Alerta: Pluviómetro posiblemente bloqueado");
+#endif
+        }
+        lastMaintenanceCheck = currentMillis;
+    }
+
+    // Procesamiento horario
+    if (currentMillis - lastHourCheck >= ONE_HOUR_MS) {
+        // Calcular lluvia en la última hora
+        rainData.intervalRainfall = ISRContador * rainConfig.mmPerTick;
+        
+        // Actualizar histórico horario
+        shiftArrayRight(rainData.hourlyRainfall);
+        rainData.hourlyRainfall[0] = rainData.intervalRainfall;
+        
+        // Actualizar acumulados
+        rainData.hourlyCarryover += rainData.intervalRainfall;
+        rainData.priorHour = rainData.intervalRainfall;
+        
+        // Actualizar sensores
+        // Actualizar sensores aquí como sensor.rainTicks24h si es necesario
+        
+#ifdef SerialMonitor
+        Serial.printf("Lluvia última hora: %.2f mm\n", rainData.intervalRainfall);
+        Serial.printf("Lluvia total día: %.2f mm\n", rainData.hourlyCarryover);
 #endif
 
-    // Resetea el contador de gotas y los valores de lluvia por hora
-    ISRContador = 0;
-    rainData.intervalRainfall = 0;
-    tiempohora = currentMillis; // Reinicia el tiempo de la hora
-  }
-
-  // Si ha pasado un minuto (60 segundos)
-  if (currentMillis - tiempocontador >= 60000UL)
-  {
-    // Actualiza la lluvia de los últimos 60 minutos
-    for (int i = 4; i > 0; i--)
-    {
-      rainData.current60MinRainfall[i] = rainData.current60MinRainfall[i - 1];
+        // Reiniciar contadores
+        ISRContador = 0;
+        lastHourCheck = currentMillis;
     }
-    rainData.current60MinRainfall[0] = rainData.intervalRainfall;
 
-    // Actualiza la lluvia acumulada por minuto
-    rainData.minuteCarryover = rainData.intervalRainfall + rainData.priorMinute;
-
-    // Actualiza la lluvia del minuto anterior
-    rainData.priorMinute = rainData.intervalRainfall;
-
-    tiempocontador = currentMillis; // Reinicia el tiempo del contador del minuto
-  }
-
-  // Reinicia los datos a las 00:09 (medianoche)
-  if (0 == timeClient.getHours() && 9 >= timeClient.getMinutes())
-  { // Solo reinicia a medianoche
-    // Resetea todos los valores a medianoche
-    for (int i = 0; i < 24; i++)
-    {
-      rainData.hourlyRainfall[i] = 0; // Resetea lluvia por hora
+    // Procesamiento por minuto
+    if (currentMillis - lastMinuteCheck >= ONE_MINUTE_MS) {
+        // Actualizar histórico de minutos
+        shiftArrayRight(rainData.current60MinRainfall);
+        rainData.current60MinRainfall[0] = rainData.intervalRainfall;
+        
+        // Actualizar acumulados por minuto
+        rainData.minuteCarryover = rainData.intervalRainfall + rainData.priorMinute;
+        rainData.priorMinute = rainData.intervalRainfall;
+        
+        lastMinuteCheck = currentMillis;
     }
-    rainData.intervalRainfall = 0;
-    rainData.hourlyCarryover = 0;
-    rainData.priorHour = 0;
-    rainData.minuteCarryover = 0;
-    rainData.priorMinute = 0;
+
+    // Reinicio diario a las 00:09
+    if (timeClient.getHours() == rainConfig.resetHour && timeClient.getMinutes() == rainConfig.resetMinute) {
+        memset(rainData.hourlyRainfall, 0, sizeof(rainData.hourlyRainfall));
+        rainData.intervalRainfall = 0;
+        rainData.hourlyCarryover = 0;
+        rainData.priorHour = 0;
+        rainData.minuteCarryover = 0;
+        rainData.priorMinute = 0;
 
 #ifdef SerialMonitor
-    Serial.println("Datos reiniciados a medianoche.");
+        Serial.println("Datos de lluvia reiniciados para nuevo día");
 #endif
-  }
+    }
 }

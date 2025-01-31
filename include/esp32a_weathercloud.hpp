@@ -1,81 +1,122 @@
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
+// Funciones auxiliares para formato numérico
+inline float round1(float value) { return static_cast<int>(value * 10) / 10.0f; }
+inline float round2(float value) { return static_cast<int>(value * 100) / 100.0f; }
 
-void weathercloud(void) {
+void weathercloud()
+{
+  // 1. Verificar conexión de red primero
+  if (!networkConnected())
+  {
+#ifdef SerialMonitor
+    Serial.println("[WeatherCloud] Error: Sin conexión de red");
+#endif
+    return;
+  }
+
+  // 2. Buffer estático para URL
+  char urlBuffer[256];
+  snprintf(urlBuffer, sizeof(urlBuffer), "%s/v1/push/%s?key=%s",
+           wc_server, wc_ID, wc_Key);
+
+  // 3. Configuración HTTP optimizada
+  WiFiClient client;
   HTTPClient http;
 
-  // Construir URL de la API
-  //String url = "http://api.weathercloud.net/v1/push/" + String(ID2) + "?key=" + String(Key2);
-  String url = String(wc_server) + "/v1/push/" + String(wc_ID) + "?key=" + String(wc_Key);
+  http.setTimeout(15000);
+  http.setReuse(false);
+  http.setUserAgent("ESP32-WeatherStation/1.0");
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
 
-  http.begin(url);
-  http.addHeader("Content-Type", "application/json");
+  // 4. Calcular tamaño JSON dinámicamente
+  const size_t capacity = JSON_OBJECT_SIZE(15) +
+                          JSON_OBJECT_SIZE(5) +
+                          24 * JSON_ARRAY_SIZE(1) +
+                          5 * JSON_ARRAY_SIZE(1) +
+                          512;
+  DynamicJsonDocument doc(capacity);
 
-  // Crear el documento JSON para enviar
-  StaticJsonDocument<capacitySettings> doc;
+  // 5. Datos principales con movimiento semántico
+  JsonObject root = doc.to<JsonObject>();
+  root["windDirectionADC"] = sensor.windDirectionADC;
+  root["windDirectionGradient"] = sensor.windDirectionGradient;
+  root["temperatureC"] = round2(sensor.temperatureC);
+  root["temperatureAHT"] = round2(sensor.temperatureAHT);
+  root["temperatureBMP"] = round2(sensor.temperatureBMP);
+  root["windSpeed"] = round1(sensor.windSpeed);
+  root["windSpeedMax"] = round1(sensor.windSpeedMax);
+  root["barometricPressure"] = round2(sensor.barometricPressure);
+  root["humidity"] = static_cast<uint8_t>(sensor.humidity);
+  root["UVIndex"] = static_cast<uint8_t>(sensor.UVIndex);
+  root["lux"] = static_cast<int>(sensor.lux);
+  root["co2"] = static_cast<int>(sensor.co2);
+  root["tvoc"] = static_cast<int>(sensor.tvoc);
 
-  // Agregar datos de los sensores al JSON
-  doc["windDirectionADC"] = sensor.windDirectionADC;
-  doc["windDirectionGradient"] = sensor.windDirectionGradient;
-  doc["rainTicks24h"] = sensor.rainTicks24h;
-  doc["rainTicks60m"] = sensor.rainTicks60m;
-  doc["temperatureC"] = sensor.temperatureC;
-  doc["temperatureAHT"] = sensor.temperatureAHT;
-  doc["temperatureBMP"] = sensor.temperatureBMP;
-  doc["windSpeed"] = sensor.windSpeed;
-  doc["windSpeedMax"] = sensor.windSpeedMax;
-  doc["barometricPressure"] = sensor.barometricPressure;
-  doc["humidity"] = sensor.humidity;
-  doc["UVIndex"] = sensor.UVIndex;
-  doc["lux"] = sensor.lux;
-  doc["co2"] = sensor.co2;
-  doc["tvoc"] = sensor.tvoc;
+  // 6. Datos de lluvia optimizados
+  JsonObject rainfall = root.createNestedObject("rainfall");
+  rainfall["intervalRainfall"] = round2(rainData.intervalRainfall);
+  rainfall["hourlyCarryover"] = round2(rainData.hourlyCarryover);
+  rainfall["priorHour"] = round2(rainData.priorHour);
 
-  // Agregar datos de lluvia como objeto anidado
-  JsonObject rainfall = doc.createNestedObject("rainfall");
-  rainfall["intervalRainfall"] = rainData.intervalRainfall;
-
-  JsonArray hourlyRainfallArray = rainfall.createNestedArray("hourlyRainfall");
-  for (int i = 0; i < 24; i++) {
-    hourlyRainfallArray.add(rainData.hourlyRainfall[i]);
+  JsonArray hourly = rainfall.createNestedArray("hourlyRainfall");
+  for (size_t i = 0; i < sizeof(rainData.hourlyRainfall) / sizeof(rainData.hourlyRainfall[0]); i++)
+  {
+    hourly.add(rainData.hourlyRainfall[i]);
   }
 
-  JsonArray current60MinRainfallArray = rainfall.createNestedArray("current60MinRainfall");
-  for (int i = 0; i < 5; i++) {
-    current60MinRainfallArray.add(rainData.current60MinRainfall[i]);
+  JsonArray current60 = rainfall.createNestedArray("current60MinRainfall");
+  for (size_t i = 0; i < sizeof(rainData.current60MinRainfall) / sizeof(rainData.current60MinRainfall[0]); i++)
+  {
+    current60.add(rainData.current60MinRainfall[i]);
   }
 
-  rainfall["hourlyCarryover"] = rainData.hourlyCarryover;
-  rainfall["priorHour"] = rainData.priorHour;
-  rainfall["minuteCarryover"] = rainData.minuteCarryover;
-  rainfall["priorMinute"] = rainData.priorMinute;
-
-  // Serializar JSON a una cadena
+  // 7. Serialización eficiente
   String json;
   serializeJson(doc, json);
 
+  // 8. Envío con reintentos y manejo de errores
+  const uint8_t maxRetries = 2;
+  int httpResponseCode = -1;
+  bool success = false;
+
+  for (uint8_t attempt = 0; attempt <= maxRetries; ++attempt)
+  {
+    if (http.begin(client, urlBuffer))
+    {
+      http.addHeader("Content-Type", "application/json");
+      httpResponseCode = http.POST(json);
+
+      if (httpResponseCode == HTTP_CODE_OK)
+      {
+        success = true;
 #ifdef SerialMonitor
-  Serial.println("Enviando JSON:");
-  Serial.println(json);
+        String response = http.getString();
+        Serial.printf("[WeatherCloud] Respuesta: %s\n", response.c_str());
 #endif
-
-  // Enviar el JSON a la API
-  int httpResponseCode = http.POST(json);
+        break;
+      }
 
 #ifdef SerialMonitor
-  if (httpResponseCode > 0) {
-    Serial.print("Código de respuesta HTTP: ");
-    Serial.println(httpResponseCode);
-    if (httpResponseCode == HTTP_CODE_OK) {
-      String payload = http.getString();
-      Serial.println("Respuesta del servidor:");
-      Serial.println(payload);
+      Serial.printf("[WeatherCloud] Intento %d - Código: %d\n",
+                    attempt + 1, httpResponseCode);
+#endif
+      http.end();
+      delay(500 * (attempt + 1)); // Backoff exponencial
     }
-  } else {
-    Serial.print("Error al enviar la petición: ");
-    Serial.println(http.errorToString(httpResponseCode));
+  }
+
+  // 9. Logging detallado
+#ifdef SerialMonitor
+  if (!success)
+  {
+    Serial.printf("[WeatherCloud] Error final: %d - %s\n",
+                  httpResponseCode, http.errorToString(httpResponseCode).c_str());
+    Serial.println("JSON enviado:");
+    serializeJsonPretty(doc, Serial);
+    Serial.println();
   }
 #endif
 
-  http.end();  // Cerrar la conexión HTTP
+  // 10. Limpieza garantizada
+  http.end();
+  doc.clear();
 }

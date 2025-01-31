@@ -128,7 +128,7 @@ void windy();
 void pws();
 
 void enviardatos() {
-    if (WiFi.status() != WL_CONNECTED) {
+    if (!networkConnected()) {
         #ifdef SerialMonitor
         Serial.println("No hay conexión Wi-Fi\n");
         #endif

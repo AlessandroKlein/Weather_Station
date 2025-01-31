@@ -85,10 +85,10 @@ char pw_Key[MAX_API_KEY_LENGTH] = "";  // Pwsweather Key
 // -------------------------------------------------------------------
 // Tiempo de actualizacion
 // -------------------------------------------------------------------
-//const long interval = 300000;  // Intervalo de 5 minutos en milisegundos (300000 ms)
+const long interval = 300000;  // Intervalo de 5 minutos en milisegundos (300000 ms)
 //const long interval = 180000;  // Intervalo de 3 minutos en milisegundos (180000 ms)
 //const long interval = 90000;
-const long interval = 10000;
+//const long interval = 10000;
 
 // -------------------------------------------------------------------
 // Zona EEPROM para contador de reinicios
@@ -115,6 +115,14 @@ struct sensorData {
   float lux;                    // Iluminancia en lux
   float co2;                    // Nivel de CO2 en ppm
   float tvoc;                   // Nivel de TVOC (compuestos orgánicos volátiles)
+  float heatIndex;
+  float windChill;
+  float dewPoint;
+  int aqi;
+  float et0;
+  float altitude;
+  float cloudIndex;
+  float windSpeedAvg;
 };
 
 // -------------------------------------------------------------------
@@ -152,11 +160,17 @@ rainfallData rainData;     // Datos de lluvia
 // -------------------------------------------------------------------
 const int umbraltiempo = 300;  // Tiempo de umbral para evitar rebotes
 
-volatile int ISRContador = 0;  // Contador de gotas
+//volatile int ISRContador = 0;  // Contador de gotas
 int contador = 0;
 float litros = 0;
 long tiempocontador = 0;
 long tiempohora = 0;
+
+static uint32_t ISRContador = 0;
+static uint32_t lastRainTime = 0;
+static uint32_t lastMaintenanceCheck = 0;
+static uint32_t lastHourCheck = 0;
+static uint32_t lastMinuteCheck = 0;
 
 // -------------------------------------------------------------------
 // Zona Firmware
