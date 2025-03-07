@@ -1,0 +1,17 @@
+RewriteEngine On
+
+# Redirige todas las solicitudes a index.php, excepto si son archivos o directorios existentes
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*)$ $1.php [L,QSA]
+
+#RewriteCond %{REQUEST_FILENAME} !-f
+#RewriteCond %{REQUEST_FILENAME} !-d
+#RewriteRule ^(.*)$ index.php?ruta=$1 [L,QSA]
+
+# Manejar rutas dinámicas específicas (opcional, para casos especiales)
+# RewriteRule ^usuario/([0-9]+)$ perfil.php?id=$1 [L,QSA]
+# RewriteRule ^historial/([0-9]+)$ historial.php?id=$1 [L,QSA]
+
+# Redirigir errores 404
+ErrorDocument 404 /404.php
